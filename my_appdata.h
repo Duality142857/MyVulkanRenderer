@@ -26,8 +26,9 @@ class MyAppData
 public:
     MySwapChain& myswapChain;
     MyDevice& mydevice;
-    // MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
-    MyTexture mytexture{mydevice,"../resources/casa/text.jpg"};
+    MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
+    // MyTexture mytexture{mydevice,"../resources/tex-models/cat-atlas.jpg"};
+
 
     
     // VkImage textureImage;

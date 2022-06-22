@@ -31,10 +31,15 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
     VkRenderPass renderPass;
     std::vector<VkFramebuffer> framebuffers;
 
+    //單線程實際上只各自需要一個semaphore
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    std::vector<VkFence> imagesInFlight;
+
+    // VkSemaphore imageAvailableSemaphore;
+    // VkSemaphore renderFinishedSemaphore;
+
+    std::vector<VkFence> frameFences;
+    std::vector<VkFence> imageFences;
     
 public:
     MySwapChain(MyDevice& mydevice):mydevice{mydevice}
@@ -80,8 +85,9 @@ public:
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(mydevice.device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(mydevice.device, imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(mydevice.device, inFlightFences[i], nullptr);
+            vkDestroyFence(mydevice.device, frameFences[i], nullptr);
         }
+
     }
 
     void cleanup()
@@ -243,8 +249,8 @@ public:
     {
         imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-        imagesInFlight.resize(images.size(), VK_NULL_HANDLE);
+        frameFences.resize(MAX_FRAMES_IN_FLIGHT);
+        imageFences.resize(images.size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -257,9 +263,10 @@ public:
         {
             if (vkCreateSemaphore(mydevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
             vkCreateSemaphore(mydevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(mydevice.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            vkCreateFence(mydevice.device, &fenceInfo, nullptr, &frameFences[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
+
         }
     }
 

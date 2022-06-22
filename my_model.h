@@ -5,6 +5,9 @@
 #include"ext/tiny_obj_loader.h"
 #include"my_appdata.h"
 #include<unordered_map>
+
+static MyGeo::Vec2f noTextureUV{-1,-1};
+
 struct MyVertex_Default
 {
     MyGeo::Vec3f position;
@@ -149,6 +152,100 @@ public:
 
 };
 
+
+enum class GeoShape {
+    Box, Circle, Sphere, Rect
+};
+
+class ShapeModel: public MyModel
+{   
+public: 
+    std::vector<MyVertex_Default> vertices;
+    std::vector<uint32_t> indices;
+    GeoShape shape;
+    ShapeModel(MyDevice& mydevice, MySwapChain& myswapChain, GeoShape shape, const std::initializer_list<float>& scales): MyModel{mydevice,myswapChain},shape{shape}
+    {
+        switch (shape)
+        {
+        case GeoShape::Rect :
+        {
+            vertices.resize(4);
+            indices.resize(6);
+            auto p=scales.begin();
+            float a=*p*0.5f;
+            float b=*(p+1)*0.5f;
+            vertices={
+                {
+                    {-a,0,b},
+                    {1,1,1},
+                    {0,1,0},
+                    noTextureUV
+                },
+                {
+                    {a,0,b},
+                    {1,1,1},
+                    {0,1,0},
+                    noTextureUV
+                },
+                {
+                    {a,0,-b},
+                    {1,1,1},
+                    {0,1,0},
+                    noTextureUV
+                },
+                {
+                    {-a,0,-b},
+                    {1,1,1},
+                    {0,1,0},
+                    noTextureUV
+                }
+                };
+            indices={0,1,2,
+                    0,2,3};
+            break;
+        }
+
+        case GeoShape::Box :
+            break;
+        
+        default:
+            break;
+        }
+
+        createData();
+
+    }
+
+    void createData() override
+    {
+        createVertexBuffer();
+        createIndexBuffer();
+    }
+
+    void draw(VkCommandBuffer commandBuffer, uint32_t size) override
+    {
+        vkCmdDrawIndexed(commandBuffer, size, 1, 0, 0, 0);
+    }
+    void bind(VkCommandBuffer commandBuffer) override
+    {
+        VkBuffer vertexBuffers[] = {vertexBuffer.buffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+    virtual void createVertexBuffer() override
+    {
+        createDataBuffer(vertices.data(),vertices.size(),vertexBuffer,VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    }
+    virtual void createIndexBuffer() override
+    {
+        createDataBuffer(indices.data(),indices.size(),indexBuffer,VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    }
+
+};
+
+
+
 class ExtModel:public MyModel 
 {
 public:
@@ -170,7 +267,7 @@ public:
         indices.clear();
 
         tinyobj::ObjReaderConfig reader_config;
-        reader_config.mtl_search_path="../resources/";
+        reader_config.mtl_search_path="../resources/tex-models";
         tinyobj::ObjReader reader;
         if (!reader.ParseFromFile(filename, reader_config)) 
         {
@@ -211,7 +308,7 @@ public:
 
                     vertex.texCoord={
                         attrib.texcoords[2*size_t(index.texcoord_index)+0],
-                        attrib.texcoords[2*size_t(index.texcoord_index)+1]
+                        1-attrib.texcoords[2*size_t(index.texcoord_index)+1]
                     };
 
                 }
@@ -256,20 +353,16 @@ public:
     //     int texWidth, texHeight, texChannels;
     //     stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     //     VkDeviceSize imageSize = texWidth * texHeight * 4;
-
     //     if (!pixels) {
     //         throw std::runtime_error("failed to load texture image!");
     //     }
-
     //     VkBuffer stagingBuffer;
     //     VkDeviceMemory stagingBufferMemory;
     //     createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
     //     void* data;
     //     vkMapMemory(mydevice.device, stagingBufferMemory, 0, imageSize, 0, &data);
     //         memcpy(data, pixels, static_cast<size_t>(imageSize));
     //     vkUnmapMemory(mydevice.device, stagingBufferMemory);
-
     //     stbi_image_free(pixels);
     //     VkImageCreateInfo imageInfo{};
     //     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -285,21 +378,13 @@ public:
     //     imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     //     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     //     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
     //     myswapChain.createImageWithInfo(imageInfo,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
     //     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     //         copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
     //     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
     //     vkDestroyBuffer(mydevice.device, stagingBuffer, nullptr);
     //     vkFreeMemory(mydevice.device, stagingBufferMemory, nullptr);
     // }
-
-
-
-
-
 
     void draw(VkCommandBuffer commandBuffer, uint32_t size) override
     {

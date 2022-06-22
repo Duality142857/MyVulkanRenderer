@@ -25,7 +25,14 @@ vec3 gethalfvec(vec3 a, vec3 b)
     return normalize(a+b);
 }
 
-void main() {
+vec3 getTexture(sampler2D sampl, vec2 tex)
+{
+    if(tex.x<-0.5) return inColor;
+    return texture(sampl,fragTexCoord).xyz;
+}
+
+void main() 
+{
     // outColor = texture(texSampler, fragTexCoord);
 
     vec3 lightVec=(ubo.lightPos-inPosition);
@@ -41,7 +48,9 @@ void main() {
     // outColor=clamp(pow(cos0,ubo.specFactor)*vec4(ubo.lightColor*inColor,1.0)/d2,0,1);
     // outColor=cos0*vec4(ubo.lightColor*inColor,1.0)/d2;
     // outColor=texture(texSampler,fragTexCoord);
-    outColor=cos0*vec4(ubo.lightColor*texture(texSampler,fragTexCoord).xyz,1.0)/d2;
+    // outColor=cos0*vec4(ubo.lightColor*texture(texSampler,fragTexCoord).xyz,1.0)/d2;
+    outColor=cos0*vec4(ubo.lightColor*getTexture(texSampler,fragTexCoord),1.0)/d2;
+
 
 
 

@@ -214,6 +214,7 @@ public:
     {
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        //commandbuffer can be reset individually, or they have to be reset all at once
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();

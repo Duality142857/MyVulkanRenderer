@@ -84,6 +84,7 @@ struct Triangle: public Shape
             MyGeo::Vec3f{std::max({v0.x,v1.x,v2.x}),std::max({v0.y,v1.y,v2.y}),std::max({v0.z,v1.z,v2.z})}
         };
     }
+    
     virtual void sample(HitRecord& rec) const override
     {
         float x=getRand(0.f,1.f);
