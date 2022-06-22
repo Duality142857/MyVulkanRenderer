@@ -3,7 +3,6 @@
 #include"my_buffer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include"ext/tiny_obj_loader.h"
-#include"my_appdata.h"
 #include<unordered_map>
 
 static MyGeo::Vec2f noTextureUV{-1,-1};

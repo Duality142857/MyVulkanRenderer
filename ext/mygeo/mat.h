@@ -167,8 +167,7 @@ struct Mat
     {
         T det=determinant();
         assert(det!=0);
-        Mat<T,N,N> am{}
-        
+        Mat<T,N,N> am{};
 
     }
 

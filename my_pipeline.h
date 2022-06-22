@@ -1,21 +1,21 @@
 #pragma once
-#include"my_appdata.h"
+#include"my_model.h"
 #include"my_swapchain.h"
+#include"my_descriptors.h"
 #include<fstream>
 
 class MyPipeline
 {
 public:
-    MyAppData& myappdata;
     MyDevice& mydevice;
     MySwapChain& myswapChain;
-
+    MyDescriptors& mydescriptors;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
 
 
 
-    MyPipeline(MyAppData& myappdata):myappdata{myappdata},mydevice{myappdata.mydevice},myswapChain{myappdata.myswapChain}
+    MyPipeline(MyDescriptors& _mydescriptors):mydevice{_mydescriptors.mydevice},myswapChain{_mydescriptors.myswapChain},mydescriptors{_mydescriptors}
     {
         createGraphicsPipeline();
     }
@@ -123,7 +123,9 @@ public:
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts =&myappdata.descriptorSetLayout;
+        // pipelineLayoutInfo.pSetLayouts =&myappdata.descriptorSetLayout;
+        pipelineLayoutInfo.pSetLayouts =&mydescriptors.descriptorSetLayout;
+
 
         if (vkCreatePipelineLayout(mydevice.device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) 
             throw std::runtime_error("failed to create pipeline layout!");

@@ -5,11 +5,25 @@
 #include"my_window.h"
 #include"my_device.h"
 #include"my_swapchain.h"
-#include"my_appdata.h"
 #include"my_buffer.h"
 #include"my_pipeline.h"
 #include"my_renderer.h"
+#include"my_descriptors.h"
+#include"my_texture.h"
 #include"cornell.h"
+
+struct UniformBufferObject
+{
+    alignas(16) MyGeo::Mat4f model;
+    alignas(16) MyGeo::Mat4f view;
+    alignas(16) MyGeo::Mat4f proj;
+    alignas(16) MyGeo::Vec3f lightPos;
+    alignas(16) MyGeo::Vec3f lightColor;
+    alignas(16) MyGeo::Vec3f eyePos;
+    alignas(16) float specFactor;
+};
+
+
 
 class App
 {
@@ -18,9 +32,15 @@ public:
     MyWindow mywindow{width,height};
     MyDevice mydevice{mywindow};
     MySwapChain myswapChain{mydevice};
-    MyAppData myappdata{myswapChain};
-    MyPipeline mypipeline{myappdata};
+    DescriptorStats stats{1,1,4,myswapChain.images.size()};
+    MyDescriptors mydescriptors{myswapChain,stats};
+    
+    MyPipeline mypipeline{mydescriptors};
     MyRenderer renderer{mypipeline};
+    MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
+
+    std::vector<MyBuffer> uniformBuffers;
+
     ExtModel extmodel{mydevice,myswapChain,"../resources/teapot.obj"};
     ShapeModel rect{mydevice,myswapChain,GeoShape::Rect,{10.f,10.f}};
     App()
@@ -28,15 +48,24 @@ public:
         
     }
 
-    void run()
+    virtual void run()
     {
+        init();
         mainLoop();
         cleanup();
     }
 
-    void cleanup()
+    virtual void init()
+    {
+        createUniformBuffers();
+    }
+
+
+    virtual void cleanup()
     {
         renderer.cleanup();
+        for(auto& ub:uniformBuffers) ub.clear();
+        mydescriptors.cleanup();
     }
 
 //At a high level, rendering a frame in Vulkan consists of a common set of steps:
@@ -66,7 +95,7 @@ public:
         vkResetCommandBuffer(cmdBuffer,VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
         renderer.startRecord(cmdBuffer,myswapChain.framebuffers[imageIndex],mypipeline.graphicsPipeline);
         extmodel.bind(cmdBuffer);
-        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mypipeline.pipelineLayout, 0, 1, &myappdata.descriptorSets[imageIndex], 0, nullptr);
+        updateDescriptorSets(cmdBuffer,imageIndex);
         extmodel.draw(cmdBuffer,extmodel.indices.size());
         rect.bind(cmdBuffer);
         rect.draw(cmdBuffer,rect.indices.size());
@@ -132,11 +161,56 @@ static MyGeo::Vec3f xaxis,yaxis,zaxis;
         ubo.eyePos=eyePos;
         ubo.specFactor=1;
         void* data;
-        vkMapMemory(mydevice.device, myappdata.uniformBuffers[currentImage].memory, 0, sizeof(ubo), 0, &data);
+        vkMapMemory(mydevice.device, uniformBuffers[currentImage].memory, 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
-        vkUnmapMemory(mydevice.device, myappdata.uniformBuffers[currentImage].memory);
+        vkUnmapMemory(mydevice.device, uniformBuffers[currentImage].memory);
     }
 private:
 
+
+    virtual void updateDescriptorSets(VkCommandBuffer cmdBuffer, uint32_t imageIndex)
+    {   
+        uint32_t setIndex=imageIndex%mydescriptors.stats.maxSetNum;
+
+        VkDescriptorBufferInfo bufferInfo=mydescriptors.getBufferInfo(uniformBuffers[imageIndex],sizeof(UniformBufferObject));
+        VkDescriptorImageInfo imageInfo=mydescriptors.getImageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,mytexture.textureImageView,mytexture.textureSampler);
+        
+        std::array<VkWriteDescriptorSet,2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = mydescriptors.descriptorSets[setIndex];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = mydescriptors.descriptorSets[setIndex];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
+        
+        vkUpdateDescriptorSets(mydevice.device,descriptorWrites.size(),descriptorWrites.data(),0,nullptr);
+
+        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mypipeline.pipelineLayout, 0, 1, &mydescriptors.descriptorSets[setIndex], 0, nullptr);
+
+
+    }
+
+    virtual void createUniformBuffers() 
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        // uniformBuffers.resize(myswapChain.images.size());
+        for(int i=0;i!=myswapChain.images.size();++i) uniformBuffers.push_back({mydevice});
+        // uniformBuffersMemory.resize(swapChainImages.size());
+
+        for (size_t i = 0; i < myswapChain.images.size(); i++) 
+        {
+            mydevice.createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i].buffer, uniformBuffers[i].memory);
+        }
+    }
 };
 

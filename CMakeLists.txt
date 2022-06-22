@@ -27,7 +27,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(TINYOBJ_INCLUDE_PATH /home/number/libraries/tinyobjloader)
     set(GLFW_DIR /home/number/tools/glfw)
     set(IMGUI_DIR /home/number/approot/ImGuiApps/imgui/)
+    message("set linux paths")
 endif()
+include_directories(/home/number/approot/ImGuiApps/imgui/)
 
 message(STATUS "Configuring on/for ${CMAKE_SYSTEM_NAME}")
 include_directories(ext)
@@ -38,7 +40,7 @@ include_directories(ext)
 add_executable(MyVulkan main.cpp app.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(bookmanager
+    target_link_libraries(MyVulkan
     -lglfw3
     -lvulkan
     -ldl

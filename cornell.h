@@ -1,6 +1,5 @@
 #pragma once
 
-#include"my_appdata.h"
 #include <iostream>
 #include"geometry/bbox.h"
 #include"geometry/ray.h"

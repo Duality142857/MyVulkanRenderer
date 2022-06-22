@@ -3,6 +3,7 @@
 #include"../geometry/space.h"
 #include"../geometry/transforms.h"
 #include"material.h"
+#include<memory>
 
 struct Primitive;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include"../core/material.h"
+#include<memory>
 
 struct Primitive : Object
 {

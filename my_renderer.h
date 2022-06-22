@@ -9,8 +9,8 @@
 #include"geometry/transforms.h"
 
 #include<imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 static constexpr int FrameRate=30;
 static constexpr int FrameInterval=1000/FrameRate;
 static float mycolor[4]={0.5,0.5,0.5,1.0};
@@ -21,7 +21,6 @@ class MyRenderer
     
 public:
     MyPipeline& mypipeline;
-    MyAppData& myappdata;
     MyDevice& mydevice;
     MySwapChain& myswapChain;
     // MyTexture mytexture{mydevice,"D:/approot/MyVulkan/resources/tex-models/bunny-atlas.jpg"};
@@ -41,7 +40,7 @@ public:
     size_t currentFrame = 0;
 static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
-    MyRenderer(MyPipeline& mypipeline):mypipeline{mypipeline},mydevice{mypipeline.myappdata.mydevice},myappdata{mypipeline.myappdata},myswapChain{mypipeline.myswapChain}
+    MyRenderer(MyPipeline& mypipeline):mypipeline{mypipeline},mydevice{mypipeline.mydevice},myswapChain{mypipeline.myswapChain}
     {
         init();
     }
@@ -135,7 +134,7 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
     void cleanup()
     {
         myswapChain.cleanup();
-        myappdata.cleanup();
+        // myappdata.cleanup();
         mypipeline.cleanup();
         vkFreeCommandBuffers(mydevice.device,mydevice.commandPool,static_cast<uint32_t>(commandBuffers.size()),commandBuffers.data());
     }

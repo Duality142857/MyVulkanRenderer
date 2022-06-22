@@ -6,6 +6,7 @@
 #include"utils.h"
 #include"../core/object.h"
 #include"../core/myrandom.h"
+#include<math.h>
 
 
 
@@ -38,10 +39,10 @@ struct Sphere: public Shape
     {
         float theta=getRand(0.f,Pi);   
         float phi=getRand(0.f,2*Pi);
-        float z=radius*std::cosf(theta);
-        float g=radius*std::sinf(theta);
-        float x=g*std::cosf(phi);
-        float y=g*std::sinf(phi);
+        float z=radius*std::cos(theta);
+        float g=radius*std::sin(theta);
+        float x=g*std::cos(phi);
+        float y=g*std::sin(phi);
         sampleRec.position={x,y,z};
         sampleRec.normal={MyGeo::Vec3f{x,y,z}.normalize()};
     }
