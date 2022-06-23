@@ -11,6 +11,7 @@
 #include"my_descriptors.h"
 #include"my_texture.h"
 #include"cornell.h"
+#include"my_gui.h"
 
 struct UniformBufferObject
 {
@@ -39,6 +40,7 @@ public:
     MyRenderer renderer{mypipeline};
     MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
 
+    MyGui gui{myswapChain};
     std::vector<MyBuffer> uniformBuffers;
 
     ExtModel extmodel{mydevice,myswapChain,"../resources/teapot.obj"};
@@ -57,12 +59,14 @@ public:
 
     virtual void init()
     {
+        gui.init();
         createUniformBuffers();
     }
 
 
     virtual void cleanup()
     {
+        gui.cleanup();
         renderer.cleanup();
         for(auto& ub:uniformBuffers) ub.clear();
         mydescriptors.cleanup();
@@ -76,6 +80,7 @@ public:
 // Present the swap chain image
     virtual void renderFrame() 
     {
+        gui.getGuiDrawData();
         uint32_t imageIndex=renderer.startFrame();
         updateFrameData(imageIndex);
         recordCommand(renderer.commandBuffers[renderer.currentFrame],imageIndex);
@@ -99,6 +104,9 @@ public:
         extmodel.draw(cmdBuffer,extmodel.indices.size());
         rect.bind(cmdBuffer);
         rect.draw(cmdBuffer,rect.indices.size());
+
+        ImGui_ImplVulkan_RenderDrawData(gui.drawData,cmdBuffer);
+
         renderer.endRecord(cmdBuffer);
     }
 
@@ -212,5 +220,8 @@ private:
             mydevice.createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i].buffer, uniformBuffers[i].memory);
         }
     }
+
+
+
 };
 

@@ -22,7 +22,6 @@ public:
     MySwapChain& myswapChain;
     MyDevice& mydevice;
 
-
     VkDescriptorPool pool;
     std::vector<VkDescriptorSet> descriptorSets;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -66,6 +65,11 @@ public:
             throw std::runtime_error("failed to create descriptor pool!");
     }
 
+/**
+ * @brief Create a Descriptor Set Layout object
+ * with uniformNum uniforms and imageSamplerNum samplers, bound sequantially
+ * 
+ */
     virtual void createDescriptorSetLayout() 
     {
         uint32_t currentBinding=0;
@@ -81,7 +85,6 @@ public:
             uboLayoutBinding.pImmutableSamplers = nullptr;
             uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
             layoutBindings.emplace_back(uboLayoutBinding);
-
         }
 
         for(int i=0;i!=stats.imageSamplerNum;++i)
@@ -142,10 +145,10 @@ public:
         vkDestroyDescriptorPool(mydevice.device,pool,nullptr);
         vkDestroyDescriptorSetLayout(mydevice.device,descriptorSetLayout,nullptr);
     }
-    // void printInfo()
-    // {
-    //     std::cout<<"num of sets: "<<descriptorSets.size()<<std::endl;
-    //     std::cout<<"uniform num: "<<uniformNum<<std::endl;
-    //     std::cout<<"imageSampler num: "<<imageSamplerNum<<std::endl;
-    // }
+    void printStats()
+    {
+        std::cout<<"num of sets: "<<descriptorSets.size()<<std::endl;
+        std::cout<<"uniform num: "<<stats.uniformNum<<std::endl;
+        std::cout<<"imageSampler num: "<<stats.imageSamplerNum<<std::endl;
+    }
 };
