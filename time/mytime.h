@@ -16,9 +16,11 @@ std::chrono::high_resolution_clock::time_point now()
     std::chrono::high_resolution_clock::time_point t=std::chrono::high_resolution_clock::now();
     return t;
 }
+template<class T>
 int64_t getDuration(std::chrono::high_resolution_clock::time_point t0,std::chrono::high_resolution_clock::time_point t1)
 {
-    auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t1-t0);
+    
+    auto dt= std::chrono::duration_cast<T>(t1-t0);
     return dt.count();
 }
 

@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        ".cu": "cpp",
         "xiosbase": "cpp",
         "ios": "cpp",
         "array": "cpp",
@@ -130,6 +131,7 @@
         "propagate_const": "cpp",
         "*.ipp": "cpp",
         "hash_set": "cpp",
-        "*.inpl": "cpp"
+        "*.inpl": "cpp",
+        "*.tcc": "cpp"
     }
 }

@@ -11,10 +11,10 @@
 #include<imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
-static constexpr int FrameRate=30;
-static constexpr int FrameInterval=1000/FrameRate;
+// static constexpr int FrameRate=30;
+// static constexpr int FrameInterval=1000/FrameRate;
 static float mycolor[4]={0.5,0.5,0.5,1.0};
-static float sliderfloat=0.5;
+
 
 class MyRenderer
 {
@@ -26,8 +26,8 @@ public:
     // MyTexture mytexture{mydevice,"D:/approot/MyVulkan/resources/tex-models/bunny-atlas.jpg"};
     // BoxModel box{mydevice,myswapChain};
     // ExtModel extmodel{mydevice,myswapChain,"../resources/Marry.obj"};
-    ExtModel extmodel{mydevice,myswapChain,"../resources/teapot.obj"};
-    ShapeModel rect{mydevice,myswapChain,GeoShape::Rect,{10.f,10.f}};
+    // ExtModel extmodel{mydevice,myswapChain,"../resources/teapot.obj"};
+    // ShapeModel rect{mydevice,myswapChain,GeoShape::Rect,{10.f,10.f}};
 
     // ExtModel extmodel{mydevice,myswapChain,"../resources/tex-models/cat.obj"};
 

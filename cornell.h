@@ -41,9 +41,9 @@ public:
         createIndexBuffer();
     }
 
-    void draw(VkCommandBuffer commandBuffer, uint32_t size) override
+    void draw(VkCommandBuffer commandBuffer, uint32_t size, uint32_t instanceCount) override
     {
-        vkCmdDrawIndexed(commandBuffer, size, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, size, instanceCount, 0, 0, 0);
     }
     void bind(VkCommandBuffer commandBuffer) override
     {

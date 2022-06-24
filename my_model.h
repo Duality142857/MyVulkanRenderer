@@ -4,8 +4,9 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include"ext/tiny_obj_loader.h"
 #include<unordered_map>
+#include"my_sphere.h"
 
-static MyGeo::Vec2f noTextureUV{-1,-1};
+static const MyGeo::Vec2f noTextureUV{-1,-1};
 
 struct MyVertex_Default
 {
@@ -13,6 +14,7 @@ struct MyVertex_Default
     MyGeo::Vec3f color;
     MyGeo::Vec3f normal;
     MyGeo::Vec2f texCoord;
+    int modelId=1;
 
     bool operator==(const MyVertex_Default& other) const
     {
@@ -29,9 +31,9 @@ struct MyVertex_Default
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() 
+    static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions() 
     {
-        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -52,6 +54,11 @@ struct MyVertex_Default
         attributeDescriptions[3].location = 3;
         attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
         attributeDescriptions[3].offset = offsetof(MyVertex_Default, texCoord);
+
+        attributeDescriptions[4].binding = 0;
+        attributeDescriptions[4].location = 4;
+        attributeDescriptions[4].format = VK_FORMAT_R32_SINT;
+        attributeDescriptions[4].offset = offsetof(MyVertex_Default, modelId);
 
         // attributeDescriptions[2].binding = 0;
         // attributeDescriptions[2].location = 2;
@@ -92,11 +99,13 @@ public:
     MySwapChain& myswapChain;
     MyBuffer vertexBuffer{mydevice};
     MyBuffer indexBuffer{mydevice};
+    std::vector<MyVertex_Default> vertices;
+    std::vector<uint32_t> indices;
     MyModel(MyDevice& mydevice,MySwapChain& myswapChain):mydevice{mydevice},myswapChain{myswapChain}
     {
 
     }
-    virtual void draw(VkCommandBuffer commandBuffer, uint32_t size) =0;
+    virtual void draw(VkCommandBuffer commandBuffer, uint32_t size, uint32_t instanceCount) =0;
     virtual void bind(VkCommandBuffer commandBuffer) =0;
     virtual void createData() =0;
 
@@ -159,10 +168,9 @@ enum class GeoShape {
 class ShapeModel: public MyModel
 {   
 public: 
-    std::vector<MyVertex_Default> vertices;
-    std::vector<uint32_t> indices;
+
     GeoShape shape;
-    ShapeModel(MyDevice& mydevice, MySwapChain& myswapChain, GeoShape shape, const std::initializer_list<float>& scales): MyModel{mydevice,myswapChain},shape{shape}
+    ShapeModel(int modelId, MyDevice& mydevice, MySwapChain& myswapChain, GeoShape shape, const std::initializer_list<float>& scales): MyModel{mydevice,myswapChain},shape{shape}
     {
         switch (shape)
         {
@@ -178,25 +186,25 @@ public:
                     {-a,0,b},
                     {1,1,1},
                     {0,1,0},
-                    noTextureUV
+                    noTextureUV,modelId
                 },
                 {
                     {a,0,b},
                     {1,1,1},
                     {0,1,0},
-                    noTextureUV
+                    noTextureUV,modelId
                 },
                 {
                     {a,0,-b},
                     {1,1,1},
                     {0,1,0},
-                    noTextureUV
+                    noTextureUV,modelId
                 },
                 {
                     {-a,0,-b},
                     {1,1,1},
                     {0,1,0},
-                    noTextureUV
+                    noTextureUV,modelId
                 }
                 };
             indices={0,1,2,
@@ -204,8 +212,37 @@ public:
             break;
         }
 
-        case GeoShape::Box :
+        case GeoShape::Sphere :
+        {
+            SimpleMesh mesh[2];
+            Icosahedron(mesh[0],*scales.begin());
+            static int n=4;
+            SimpleMesh& mesh0=mesh[0],&mesh1=mesh[1];
+            for(int i=0;i!=n;++i)
+            {
+                SubdivideMesh(mesh0,mesh1);
+                std::swap(mesh0,mesh1);
+            }
+
+            vertices.resize(mesh1.vertices.size());
+            indices.resize(mesh1.indices.size());
+            for(auto i=0;i!=vertices.size();i++)
+            {
+                auto& meshv=mesh1.vertices[i];
+                vertices[i].position=meshv.position.v3;
+                vertices[i].color=meshv.color;
+                vertices[i].normal=meshv.normal.v3;
+                // std::cout<<vertices[i].position<<" "<<vertices[i].color<<" "<<vertices[i].normal<<std::endl;
+                vertices[i].texCoord=noTextureUV;
+                vertices[i].modelId=modelId;
+            }
+            for(auto i=0;i!=mesh1.indices.size();++i)
+            {
+                indices[i]=mesh1.indices[i];
+            }
+            std::cout<<"sphere generated!"<<std::endl;
             break;
+        }
         
         default:
             break;
@@ -221,9 +258,9 @@ public:
         createIndexBuffer();
     }
 
-    void draw(VkCommandBuffer commandBuffer, uint32_t size) override
+    void draw(VkCommandBuffer commandBuffer, uint32_t size, uint32_t instanceCount) override
     {
-        vkCmdDrawIndexed(commandBuffer, size, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, size, instanceCount, 0, 0, 0);
     }
     void bind(VkCommandBuffer commandBuffer) override
     {
@@ -234,10 +271,13 @@ public:
     }
     virtual void createVertexBuffer() override
     {
+        std::cout<<"vert num: "<<vertices.size()<<std::endl;
         createDataBuffer(vertices.data(),vertices.size(),vertexBuffer,VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     }
     virtual void createIndexBuffer() override
     {
+        std::cout<<"ind num: "<<indices.size()<<std::endl;
+
         createDataBuffer(indices.data(),indices.size(),indexBuffer,VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     }
 
@@ -248,15 +288,14 @@ public:
 class ExtModel:public MyModel 
 {
 public:
-    std::vector<MyVertex_Default> vertices;
-    std::vector<uint32_t> indices;
+
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
     
     const std::string& filename;
-    ExtModel(MyDevice& mydevice, MySwapChain& myswapChain, const std::string& filename):MyModel{mydevice,myswapChain},filename{filename}
+    ExtModel(int modelId,MyDevice& mydevice, MySwapChain& myswapChain, const std::string& filename):MyModel{mydevice,myswapChain},filename{filename}
     {
         createData();
     }
@@ -385,9 +424,9 @@ public:
     //     vkFreeMemory(mydevice.device, stagingBufferMemory, nullptr);
     // }
 
-    void draw(VkCommandBuffer commandBuffer, uint32_t size) override
+    void draw(VkCommandBuffer commandBuffer, uint32_t size, uint32_t instanceCount) override
     {
-        vkCmdDrawIndexed(commandBuffer, size, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, size, instanceCount, 0, 0, 0);
     }
     void bind(VkCommandBuffer commandBuffer) override
     {

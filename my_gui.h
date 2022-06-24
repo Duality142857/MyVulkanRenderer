@@ -11,6 +11,8 @@ public:
     MyWindow& mywindow;
     MyDevice& mydevice;
     MySwapChain& myswapChain;
+
+    float fps;
     ImDrawData* drawData;
     MyGui(MySwapChain& _myswapChain):mywindow{_myswapChain.mydevice.mywindow},mydevice{_myswapChain.mydevice},myswapChain{_myswapChain}
     {}
@@ -82,23 +84,6 @@ public:
         
     }
 
-    /**
-     * @brief start gui frame, create the gui contents and get render data to be further rendered
-     * 
-     */
-    void getGuiDrawData()
-    {
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        createGuiContents();
-
-        ImGui::Render();
-        drawData=ImGui::GetDrawData();
-        
-    }
-
     void cleanup()
     {
         ImGui_ImplVulkan_Shutdown();
@@ -106,34 +91,6 @@ public:
         ImGui::DestroyContext();
     }
 
-    virtual void createGuiContents()
-    {
-        bool t_open;
-        ImGui::StyleColorsClassic();
-        // ImGui::StyleColorsLight();
-        // ImGui::StyleColorsDark();
-        ImGui::Begin("helloworld",&t_open,ImGuiWindowFlags_MenuBar);
-        // treeSearch();
-        if(ImGui::Button("Push me!",{100,50}))
-        {
-            std::cout<<"Pushed!"<<std::endl;
-        }
 
-        char buf[1024]="asdfsdf";
-        ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
-
-        ImGui::SliderFloat("float", &sliderfloat, 0.0f, 1.0f);
-        const float my_values[] = { 0.2f, 0.1f, 1.0f, 0.5f, 0.9f, 2.2f };
-        ImGui::PlotLines("Frame Times", my_values, IM_ARRAYSIZE(my_values));
-        ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
-        ImGui::BeginChild("Scrolling");
-        for (int n = 0; n < 50; n++)
-            ImGui::Text("%04d: Some text", n);
-        ImGui::EndChild();
-        ImGui::ProgressBar(0.66,{0,100},nullptr);
-
-        ImGui::End();
-
-    }
 
 };

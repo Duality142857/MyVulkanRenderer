@@ -3,11 +3,14 @@
 #include<optional>
 #include <set>
 #include <algorithm>
+#include<cstring>
+#include<math.h>
 // #define GLFW_INCLUDE_VULKAN
 // #include<GLFW/glfw3.h>
 #include"my_window.h"
 
 // #define NDEBUG
+auto a=std::floor(2.2);
 #ifdef NDEBUG
     const bool enableValidationLayers = false;
 #else

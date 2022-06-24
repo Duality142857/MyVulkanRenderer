@@ -1,6 +1,7 @@
 #pragma once
 #include"my_device.h"
-
+#define STB_IMAGE_IMPLEMENTATION
+#include<stb_image.h>
 
 class MyTexture
 {
