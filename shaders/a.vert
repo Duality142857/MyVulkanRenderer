@@ -17,11 +17,9 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) in int modelId;
 
 layout(location = 0) out vec3 fragPosition;
-layout(location = 1) out vec3 kd;
-layout(location = 2) out vec3 ks;
-layout(location = 3) out vec3 fragNormal;
-layout(location = 4) out vec2 fragTexCoord;
-layout (location = 5) flat out int modelId_flat;
+layout(location = 1) out vec3 fragNormal;
+layout(location = 2) out vec2 fragTexCoord;
+layout (location = 3) flat out int modelId_flat;
 
 mat4 translate(vec3 tv)
 {
@@ -35,10 +33,12 @@ mat4 translate(vec3 tv)
 void main()
 {
 
-    mat4 models[2];
+    mat4 models[3];
     // models[2]=translate(vec3(gl_InstanceIndex*7,-2,0)-vec3(4,0,0))*ubo.model;
-    models[1]=translate(vec3(gl_InstanceIndex*7,-2,0)-vec3(4,0,0))*ubo.model;
+    // models[1]=translate(vec3(gl_InstanceIndex*7,0,0))*ubo.model;
     models[0]=translate(ubo.lightPos+vec3(4,0,0));
+    models[1]=ubo.model;
+    models[2]=mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,-5,1);
 
     // mat4 model=translate(vec3(gl_InstanceIndex*7,-2,0)-vec3(4,0,0))*ubo.model;
     modelId_flat=modelId;
@@ -55,6 +55,4 @@ void main()
     fragPosition=worldPos.xyz*w_reci;
     fragNormal=(models[modelId]*vec4(inNormal,0.f)).xyz;
     fragTexCoord=inTexCoord;
-    kd=vec3(0.2,0.2,0.2)*inColor;
-    ks=vec3(0.8,0.8,0.8)*inColor;
 }

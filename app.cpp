@@ -1,9 +1,13 @@
 
-#define GLFW_INCLUDE_VULKAN
+// #define GLFW_INCLUDE_VULKAN
 // #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 
-#include<GLFW/glfw3.h>
-#include<iostream>
+
+// #include<GLFW/glfw3.h>
+// #include<iostream>
+#include"my_pch.h"
 #include"my_window.h"
 #include"my_device.h"
 #include"my_swapchain.h"
@@ -12,10 +16,12 @@
 #include"my_renderer.h"
 #include"my_descriptors.h"
 #include"my_texture.h"
-#include"cornell.h"
 #include"my_gui.h"
 #include"my_sphere.h"
+#include"my_event.h"
+#include"my_inputsystem.h"
 
+// static void testtest(){std::cout<<"asdf"<<std::endl;}
 
 
 struct UniformBufferObject
@@ -26,6 +32,8 @@ struct UniformBufferObject
     alignas(16) MyGeo::Vec3f lightPos;
     alignas(16) MyGeo::Vec3f lightColor;
     alignas(16) MyGeo::Vec3f eyePos;
+    alignas(16) MyGeo::Vec3f ks;
+    alignas(16) MyGeo::Vec3f kd;
     alignas(16) float specFactor;
 };
 
@@ -39,8 +47,11 @@ public:
     int width=800, height=600;
     float t_init=0;
     float lightIntensity=10;
+    float lightColor[3]={1,1,1};
     int sphereNum=1;
     float scaleFactor=1.0;
+    
+    Dispatcher eventDispatcher;
 
     MyWindow mywindow{width,height};
     MyDevice mydevice{mywindow};
@@ -49,7 +60,7 @@ public:
     MyDescriptors mydescriptors{myswapChain,stats};
     
     MyPipeline mypipeline{mydescriptors};
-    MyRenderer renderer{mypipeline};
+    MyRenderer renderer{eventDispatcher,mypipeline};
     MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
 
     MyGui gui{myswapChain};
@@ -65,6 +76,11 @@ public:
 
     App()
     {
+        // eventDispatcher.subscribe(MouseDrag_Event,[this](const Event& e){});
+    }
+
+    void onMouseDrag()
+    {
         
     }
 
@@ -79,20 +95,21 @@ public:
     }
 
 
-    void bindModels(VkCommandBuffer cmdBuffer)
-    {
-        for(auto& model:mymodels)
-        {
-            model->bind(cmdBuffer);
-        }
-    }
+    // void bindModels(VkCommandBuffer cmdBuffer)
+    // {
+    //     for(auto& model:mymodels)
+    //     {
+    //         model->bind(cmdBuffer);
+    //     }
+    // }
 
-    template<int InstanceCount>
+    // template<int InstanceCount>
     void drawModels(VkCommandBuffer cmdBuffer)
     {
         for(auto& model:mymodels)
         {
-            model->draw(cmdBuffer,model->indices.size(),InstanceCount);
+            model->bind(cmdBuffer);
+            model->draw(cmdBuffer,model->indices.size(),1);
         }
     }
 
@@ -111,9 +128,12 @@ public:
         createUniformBuffers();
             // ShapeModel sphere{2,mydevice,myswapChain,GeoShape::Sphere,{3.f}};
     // ShapeModel sphereLight{0,mydevice,myswapChain,GeoShape::Sphere,{0.2f}};
-        addModel_Shape(0,GeoShape::Sphere,{0.2f});
-        addModel_Shape(1,GeoShape::Sphere,{3.f});
-        addModel_Ext(2,"../resources/teapot.obj");
+        addModel_Shape(0,GeoShape::Sphere,{0.03f});
+        addModel_Ext(1,"../resources/Marry.obj");
+
+        addModel_Shape(2,GeoShape::Rect,{15,15});
+        // addModel_Shape(1,GeoShape::Sphere,{3.f});
+        // addModel_Ext(2,"../resources/teapot.obj");
 
     }
 
@@ -134,9 +154,9 @@ public:
 // Present the swap chain image
     virtual void renderFrame() 
     {
-        updateUi();
         uint32_t imageIndex=renderer.startFrame();
         updateFrameData(imageIndex);
+        updateUi();
         recordCommand(renderer.commandBuffers[renderer.currentFrame],imageIndex);
         renderer.endFrame(imageIndex);
     }
@@ -176,12 +196,12 @@ public:
         // extmodel.bind(cmdBuffer);
         updateDescriptorSets(cmdBuffer,imageIndex);
 
-        // bindModels(cmdBuffer);
-        // drawModels<3>(cmdBuffer);
-        mymodels[0]->bind(cmdBuffer);
-        mymodels[0]->draw(cmdBuffer,mymodels[0]->indices.size(),1);
-        mymodels[1]->bind(cmdBuffer);
-        mymodels[1]->draw(cmdBuffer,mymodels[0]->indices.size(),sphereNum);
+        drawModels(cmdBuffer);
+        
+        // mymodels[0]->bind(cmdBuffer);
+        // mymodels[0]->draw(cmdBuffer,mymodels[0]->indices.size(),1);
+        // mymodels[1]->bind(cmdBuffer);
+        // mymodels[1]->draw(cmdBuffer,mymodels[0]->indices.size(),sphereNum);
         // mymodels[2]->bind(cmdBuffer);
         // mymodels[2]->draw(cmdBuffer,mymodels[2]->indices.size(),(int)t_init);
         
@@ -208,41 +228,57 @@ public:
         auto res=rotationMat(axis,angle)(MyGeo::Vec4f{position-center,1.f}).head+center;
         return res;
     }
+// var cameraPosition = [-20, 180, 250]; {0.4,3.5,5}
 
-    MyGeo::Vec3f camPos=MyGeo::Vec3f{0,3,-15};
-    MyGeo::Vec3f eyePos=MyGeo::Vec3f{0,3,-15};
-    MyGeo::Vec3f lookat=MyGeo::Vec3f{0,0,0};
+    MyGeo::Vec3f camPos=MyGeo::Vec3f{0.4,3,5};
+    MyGeo::Vec3f eyePos=MyGeo::Vec3f{0.4,3,5};
+    MyGeo::Vec3f lookat=MyGeo::Vec3f{0,2.5,0};
+    MyGeo::Camera cam{camPos,lookat,{0,1,0}};
+
+    UniformBufferObject ubo{};
+    MyGeo::Mat4f modelMat=MyGeo::Eye<float,4>()*MyGeo::scaleMatrix({scaleFactor,scaleFactor,scaleFactor});//*MyGeo::scaleMatrix({std::sin(time_elapsed),std::cos(time_elapsed),0.5*(std::sin(time_elapsed)+std::cos(time_elapsed))});;
 
     virtual void updateFrameData(uint32_t currentImage) 
     {
-
+        mywindow.tick();
+        ubo.ks=mymodels[1]->ks;
+        ubo.kd=mymodels[1]->kd;
+        
         static auto startTime=mytime::now();
         auto currentTime = mytime::now();
         float time_elapsed=mytime::getDuration<std::chrono::milliseconds>(startTime,currentTime)*0.0001f;
 
-        UniformBufferObject ubo{};
-        auto modelMat=MyGeo::Eye<float,4>()*MyGeo::scaleMatrix({scaleFactor,scaleFactor,scaleFactor});//*MyGeo::scaleMatrix({std::sin(time_elapsed),std::cos(time_elapsed),0.5*(std::sin(time_elapsed)+std::cos(time_elapsed))});;
 
-        if(mydevice.mywindow.leftmousePressed && mydevice.mywindow.leftDragVec!=MyGeo::Vec2f{0,0}) 
-        {
-            MyGeo::Vec3f leftDragVec={mydevice.mywindow.leftDragVec,0};
-            camPos=pointRotate(camPos,lookat,leftDragVec);
+        // if(!ImGuizmo::IsUsing() &&!gui.anyWindowFocused() && mydevice.mywindow.leftmousePressed && mydevice.mywindow.leftDragVec!=MyGeo::Vec2f{0,0}) 
+        // {
+        //     MyGeo::Vec3f leftDragVec={mydevice.mywindow.leftDragVec,0};
+        //     camPos=pointRotate(camPos,lookat,leftDragVec);
+        //     cam.position=camPos;
+        // }
+        if(!ImGuizmo::IsUsing() &&!gui.anyWindowFocused() && mydevice.mywindow.leftmousePressed) 
+        {//
+        //auto res=rotationMat(axis,angle)(MyGeo::Vec4f{position-center,1.f}).head+center;
+            cam.position=rotationMat(mywindow.dragAxis,mywindow.dragAngle)(MyGeo::Vec4f({cam.position-cam.lookat,1.f})).head+cam.lookat;
+            cam.lookdirection=(cam.lookat-cam.position).normalVec();
+            mywindow.dragAngle=0;
+            // cam.position=camPos;
         }
 
 static MyGeo::Vec3f xaxis,yaxis,zaxis;
-        zaxis=(camPos-lookat).normalVec();
+        zaxis=(cam.position-cam.lookat).normalVec();
         yaxis={0,1,0};
         xaxis=yaxis.cross(zaxis).normalVec();
         yaxis=zaxis.cross(xaxis);
 
-        if(mydevice.mywindow.rightmousePressed && mydevice.mywindow.rightDragVec!=MyGeo::Vec2f{0,0}) 
+        if(false && !ImGuizmo::IsUsing() && !gui.anyWindowFocused() && mydevice.mywindow.rightmousePressed && mydevice.mywindow.rightDragVec!=MyGeo::Vec2f{0,0}) 
         {
             MyGeo::Vec3f rightDragVec={mydevice.mywindow.rightDragVec,0};
             camPos+=0.2*(xaxis*(rightDragVec.x/(float)myswapChain.swapChainExtent.width)-yaxis*(rightDragVec.y/(float)myswapChain.swapChainExtent.height));
             lookat+=0.2*(xaxis*(rightDragVec.x/(float)myswapChain.swapChainExtent.width)-yaxis*(rightDragVec.y/(float)myswapChain.swapChainExtent.height));
+            cam.lookat=lookat;
+            cam.position=camPos;
         }
 
-        MyGeo::Camera cam{camPos,lookat,{0,1,0}};
         cam.setNearFar(-0.1,-50);
 
         float fov=40-2*mydevice.mywindow.mousescrollVal;
@@ -251,9 +287,9 @@ static MyGeo::Vec3f xaxis,yaxis,zaxis;
         ubo.model=modelMat;
         ubo.view=cam.viewMat;
         ubo.proj=cam.projMat;
-        ubo.lightColor={lightIntensity,lightIntensity,lightIntensity};
-        ubo.lightPos={2,4,2};
-        ubo.eyePos=eyePos;
+        ubo.lightColor={lightIntensity*lightColor[0],lightIntensity*lightColor[1],lightIntensity*lightColor[2]};
+        ubo.lightPos={std::sin(time_elapsed*12)*2,std::cos(time_elapsed*8)*3,std::cos(time_elapsed*12)*2};
+        ubo.eyePos=cam.position;
         ubo.specFactor=1;
         void* data;
         vkMapMemory(mydevice.device, uniformBuffers[currentImage].memory, 0, sizeof(ubo), 0, &data);
@@ -312,9 +348,24 @@ private:
     {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
 
-        ImGui::ShowDemoWindow();
+        // ImGuizmo::IsOver();
+        // ImGuizmo::IsUsing();
+
+        // ImGuizmo::Manipulate(view,proj,ImGuizmo::OPERATION::ROTATE,ImGuizmo::MODE::WORLD,);
+        // ImGuizmo::DrawCubes(view,proj,MyGeo::Eye<float,4>().col[0].data.data(),1);
+
+
+        ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
+
+        // ImGui::ShowDemoWindow();
+        
+        // auto mouseDraggingFlag=ImGui::IsMouseDragging(0, 200);
+        // std::cout<<"mouse draged "<<mouseDraggingFlag<<std::endl;
+
+        // auto mp=ImGui::GetMousePos();
+        // std::cout<<"mouse pos: "<<mp.x<<','<<mp.y<<std::endl;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
         ImGui::SetNextWindowPos(ImVec2(10, 10));
@@ -332,6 +383,9 @@ private:
 	    ImGui::PushItemWidth(110.0f);
         int itemIndex;
         // bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboFlags flags)
+
+        // addModel_Ext(0,"a");
+
         if(ImGui::CollapsingHeader("Load",ImGuiTreeNodeFlags_DefaultOpen))
         {
             const char* items[]={"extModel","geoModel"};
@@ -355,20 +409,10 @@ private:
         
         
         ImGui::PopItemWidth();
-
-        if(ImGui::Button("Push me!",{100,50}))
-        {
-            std::cout<<"Pushed!"<<std::endl;
-        }
-
-        char buf[1024]="asdfsdf";
-        ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
-
-static float sliderfloat=0.5;
-
-        ImGui::SliderFloat("LightIntensity", &lightIntensity, 1.0f, 100.0f);
+        ImGui::ColorEdit3("Light Color", lightColor, ImGuiColorEditFlags_NoAlpha);
+        ImGui::SliderFloat("LightIntensity", &lightIntensity, 2.0f, 20.0f);
         ImGui::SliderInt("SphereNum", &sphereNum,0,10);
-        ImGui::SliderFloat("SphereScaleFactor", &scaleFactor, 0.1f, 100.0f);
+        ImGui::SliderFloat("SphereScaleFactor", &scaleFactor, 0.1f, 5.0f);
 
 
         // const float my_values[] = { 0.2f, 0.1f, 1.0f, 0.5f, 0.9f, 2.2f };
@@ -380,15 +424,31 @@ static float sliderfloat=0.5;
         // ImGui::EndChild();
         // ImGui::ProgressBar(0.66,{0,100},nullptr);
 
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+        
+        int width,height;
+        glfwGetFramebufferSize(mydevice.mywindow.window,&width,&height);
+
+
+        // ImGuizmo::SetRect(ImGui::GetWindowPos().x,ImGui::GetWindowPos().y,windowWidth,windowHeight);
+        
+        ImGuizmo::SetRect(0.f,0.f,(float)width,(float)height);
+        auto view=cam.viewMat.col[0].data.data();
+        auto proj=(cam.projMat*MyGeo::scaleMatrix({1,-1,1})).col[0].data.data();
+
+        ImGuizmo::Manipulate(view,proj,ImGuizmo::OPERATION::TRANSLATE,ImGuizmo::MODE::LOCAL,modelMat.col[0].data.data());// MyGeo::rotationMatrix({0,1,0},45).col[0].data.data());
+
+        // if(ImGuizmo::IsUsing())
+        // {
+        //     // ubo.model=
+        // }
+
         ImGui::End();
         ImGui::Render();
         gui.drawData=ImGui::GetDrawData();
 
     }
-
-
-
-
 };
 
 
@@ -396,4 +456,5 @@ int main(int, char**)
 {
     App app;
     app.run();
+    // std::cout<<"hello world!"<<std::endl;
 }

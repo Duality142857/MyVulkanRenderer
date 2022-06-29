@@ -33,11 +33,20 @@ include_directories(/home/number/approot/ImGuiApps/imgui/)
 
 message(STATUS "Configuring on/for ${CMAKE_SYSTEM_NAME}")
 include_directories(ext)
+include_directories(/home/number/approot/opensource/ImGuizmo)
+
+add_library(imguithings STATIC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp /home/number/approot/opensource/ImGuizmo/ImGuizmo.cpp)
+
+add_executable(MyVulkan app.cpp)
+target_precompile_headers(MyVulkan PRIVATE my_pch.h)
+target_link_libraries(MyVulkan imguithings)
+
+# add_executable(InputTest inputTest.cpp)
+# target_precompile_headers(InputTest PRIVATE my_pch.h)
 
 
 
 
-add_executable(MyVulkan app.cpp ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(MyVulkan
@@ -60,3 +69,7 @@ else()
     # target_link_libraries(bookmanager glfw Vulkan::Vulkan)
     target_link_libraries(MyVulkan glfw Vulkan::Vulkan)
 endif()
+
+# add_executable(testevent my_inputsystem.cpp)
+# target_precompile_headers(testevent PRIVATE my_pch.h)
+

@@ -1,6 +1,6 @@
 #pragma once
-#include<vector>
-#include<array>
+// #include<vector>
+// #include<array>
 #include"my_window.h"
 #include"my_device.h"
 #define MYLOG(ostr) ostr<<" from Line: "<<__LINE__<<" file: "<<__FILE__<<std::endl;

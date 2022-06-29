@@ -1,10 +1,10 @@
 #pragma once
-#include<vector>
-#include<optional>
-#include <set>
-#include <algorithm>
-#include<cstring>
-#include<math.h>
+// #include<vector>
+// #include<optional>
+// #include <set>
+// #include <algorithm>
+// #include<cstring>
+// #include<math.h>
 // #define GLFW_INCLUDE_VULKAN
 // #include<GLFW/glfw3.h>
 #include"my_window.h"

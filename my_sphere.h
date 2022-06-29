@@ -1,11 +1,11 @@
 #pragma once
-#include<array>
-#include<vector>
-#include<map>
-#include<set>
-#include<iostream>
-#include<mygeo/vec.h>
-#include"geometry/transforms.h"
+// #include<array>
+// #include<vector>
+// #include<map>
+// #include<set>
+// #include<iostream>
+// #include<mygeo/vec.h>
+// #include"geometry/transforms.h"
 
 
 struct Vertex_PNC

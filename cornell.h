@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+// #include <iostream>
 #include"geometry/bbox.h"
 #include"geometry/ray.h"
 #include"geometry/transforms.h"

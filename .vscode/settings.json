@@ -132,6 +132,8 @@
         "*.ipp": "cpp",
         "hash_set": "cpp",
         "*.inpl": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "__functional_base": "cpp",
+        "__nullptr": "cpp"
     }
 }

@@ -5,13 +5,13 @@
 namespace mytime
 {
 
-void sleep(int n)
+static void sleep(int n)
 {
     // std::this_thread::sleep_for(std::chrono::seconds(n));
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
 }
 
-std::chrono::high_resolution_clock::time_point now()
+static std::chrono::high_resolution_clock::time_point now()
 {
     std::chrono::high_resolution_clock::time_point t=std::chrono::high_resolution_clock::now();
     return t;

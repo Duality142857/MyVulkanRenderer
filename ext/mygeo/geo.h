@@ -25,7 +25,7 @@ namespace MyGeo{
 
 
 
-constexpr float toRad(float x)
+static constexpr float toRad(float x)
 {
     return x*3.1415927/180.0;
 }
@@ -93,72 +93,6 @@ struct Vertex3D_C
     Vertex3D_C(const Vertex3D_C& vc):position{vc.position},color{vc.color}{}
 };
 
-struct Point3D
-{
-    union 
-    {
-        Vec3f data;
-        struct 
-        {
-            float x,y,z;
-        };
-    };
-    bool operator==(const Point3D & p)
-    {
-        return data==p.data;
-    }
-    Point3D(){}
-    Point3D(std::initializer_list<float> il):data{il}{}
-    Point3D(float _x,float _y,float _z):x{_x},y{_y},z{_z}{}
-    void operator+=(const Point3D& d)
-    {
-        data+=d.data;
-    }
-    Point3D(const Point3D& p)
-    {
-        data=p.data;    
-    }
-    Point3D(const Vec3f& v)
-    {
-        data=v;
-    }
-
-    Vec3f vec() const 
-    {
-        return data;
-    }
-
-    Point3D& operator=(const Point3D& p)
-    {
-        data=p.data;
-        return *this;
-    }
-
-    Point3D translate(const Vec3f& v) const
-    {
-        Point3D p{*this};
-        p.data+=v;
-        return p;
-    }
-
-
-    Point3D rotate(const Vec3f& axis, float angle);
-    Point3D scale(float k)
-    {
-        return Point3D{this->data*k};
-    }
-
-    Point3D viewtransform(const Camera& cam);
-
-    Point3D perspectiveProj(Camera& cam);
-    
-
-
-    friend std::ostream& operator<<(std::ostream& ostr, const Point3D& p)
-    {
-        return ostr<<p.data;
-    }
-};
 
 struct CoordinateSystem
 {
@@ -170,11 +104,9 @@ struct CoordinateSystem
     }
 };
 
-
-
 struct Camera
 {
-    Point3D position;
+    Vec3f position;
     Vec3f lookat;//look at point!
     Vec3f updirection;
     Vec3f lookdirection;
@@ -193,16 +125,13 @@ struct Camera
     //     updirection.normalize();
     // }
 
-    Camera(const Point3D& pos, const Vec3f& lookat, const Vec3f& up): position{pos},lookat{lookat},updirection{up.normalVec()},lookdirection{(lookat-position.data).normalVec()}
+    Camera(const Vec3f& pos, const Vec3f& lookat, const Vec3f& up): position{pos},lookat{lookat},updirection{up.normalVec()},lookdirection{(lookat-position).normalVec()}
     {
         // updirection.normalize();
         // std::cout<<"position: "<<position<<std::endl;
         // std::cout<<"lookat: "<<lookat<<std::endl;
         // std::cout<<"updirection: "<<updirection<<std::endl;
         // std::cout<<"lookdirection: "<<lookdirection<<std::endl;
-
-
-
     }
 
 
@@ -240,46 +169,150 @@ struct Camera
     }
 };
 
-Point3D Point3D::rotate(const Vec3f& axis, float angle)
-{
 
-    float C=std::cos(toRad(angle));
-    float R=1-C;
-    float S=std::sin(toRad(angle));
-    float a1=axis.x;
-    float a2=axis.y;
-    float a3=axis.z;
-    Mat3f mr{Vec3f{C+R*a1*a1,R*a1*a2+S*a3,R*a1*a3-S*a2},
-            Vec3f{R*a1*a2-S*a3,C+R*a2*a2,R*a2*a3-S*a1},
-            Vec3f{R*a1*a3-S*a2,R*a2*a3+S*a1,C+R*a3*a3}
-            };
-    return Point3D{mr*this->data};
-}
+// struct Point3D
+// {
+//     union 
+//     {
+//         Vec3f data;
+//         struct 
+//         {
+//             float x,y,z;
+//         };
+//     };
+//     bool operator==(const Point3D & p)
+//     {
+//         return data==p.data;
+//     }
+//     Point3D(){}
+//     Point3D(std::initializer_list<float> il):data{il}{}
+//     Point3D(float _x,float _y,float _z):x{_x},y{_y},z{_z}{}
+//     void operator+=(const Point3D& d)
+//     {
+//         data+=d.data;
+//     }
+//     Point3D(const Point3D& p)
+//     {
+//         data=p.data;    
+//     }
+//     Point3D(const Vec3f& v)
+//     {
+//         data=v;
+//     }
+
+//     Vec3f vec() const 
+//     {
+//         return data;
+//     }
+
+//     Point3D& operator=(const Point3D& p)
+//     {
+//         data=p.data;
+//         return *this;
+//     }
+
+//     Point3D translate(const Vec3f& v) const
+//     {
+//         Point3D p{*this};
+//         p.data+=v;
+//         return p;
+//     }
+
+
+//     Point3D rotate(const Vec3f& axis, float angle)
+//     {
+
+//         float C=std::cos(toRad(angle));
+//         float R=1-C;
+//         float S=std::sin(toRad(angle));
+//         float a1=axis.x;
+//         float a2=axis.y;
+//         float a3=axis.z;
+//         Mat3f mr{Vec3f{C+R*a1*a1,R*a1*a2+S*a3,R*a1*a3-S*a2},
+//                 Vec3f{R*a1*a2-S*a3,C+R*a2*a2,R*a2*a3-S*a1},
+//                 Vec3f{R*a1*a3-S*a2,R*a2*a3+S*a1,C+R*a3*a3}
+//                 };
+//         return Point3D{mr*this->data};
+//     }
+//     Point3D scale(float k)
+//     {
+//         return Point3D{this->data*k};
+//     }
+
+//     Point3D viewtransform(const Camera& cam)
+//     {
+//         Point3D p{*this};
+//         p=p.translate(-cam.position)
+//         Vec3f sidedirection=cam.lookdirection.cross(cam.updirection).normalize();
+//         // Vec3f up_normalized=sidedirection.cross(cam.lookdirection);
+//         CoordinateSystem cs{sidedirection,cam.updirection,-cam.lookdirection};
+//         return {cs.axis*p.vec()};
+//     }
+
+//     Point3D perspectiveProj(Camera& cam)
+//     {
+//         Vec4f p{data.x,data.y,data.z,1};
+//         // std::cout<<"p: "<<p<<std::endl;
+//         Vec4f a=cam.projMat*p;
+//         // std::cout<<a<<std::endl;
+//         float rw=1/a.w;
+//         return Point3D{a.x*rw,a.y*rw,a.z*rw};
+//     }
+    
+
+
+//     friend std::ostream& operator<<(std::ostream& ostr, const Point3D& p)
+//     {
+//         return ostr<<p.data;
+//     }
+// };
+
+
+
+
+
+
+
+// Point3D Point3D::rotate(const Vec3f& axis, float angle)
+// {
+
+//     float C=std::cos(toRad(angle));
+//     float R=1-C;
+//     float S=std::sin(toRad(angle));
+//     float a1=axis.x;
+//     float a2=axis.y;
+//     float a3=axis.z;
+//     Mat3f mr{Vec3f{C+R*a1*a1,R*a1*a2+S*a3,R*a1*a3-S*a2},
+//             Vec3f{R*a1*a2-S*a3,C+R*a2*a2,R*a2*a3-S*a1},
+//             Vec3f{R*a1*a3-S*a2,R*a2*a3+S*a1,C+R*a3*a3}
+//             };
+//     return Point3D{mr*this->data};
+// }
 
 
 //roll: z(opengl -z) look direction  滚动
 //yaw: y, up direction 偏航
 //pitch: x, side direction 坠落（仰俯）
-Point3D Point3D::viewtransform(const Camera& cam)
-{
-    Point3D p{*this};
-    p=p.translate(-cam.position.vec());
-    Vec3f sidedirection=cam.lookdirection.cross(cam.updirection).normalize();
-    // Vec3f up_normalized=sidedirection.cross(cam.lookdirection);
-    CoordinateSystem cs{sidedirection,cam.updirection,-cam.lookdirection};
-    return {cs.axis*p.vec()};
-}
+// Point3D Point3D::viewtransform(const Camera& cam)
+// {
+//     Point3D p{*this};
+//     p=p.translate(-cam.position.vec());
+//     Vec3f sidedirection=cam.lookdirection.cross(cam.updirection).normalize();
+//     // Vec3f up_normalized=sidedirection.cross(cam.lookdirection);
+//     CoordinateSystem cs{sidedirection,cam.updirection,-cam.lookdirection};
+//     return {cs.axis*p.vec()};
+// }
 
 
-Point3D Point3D::perspectiveProj(Camera& cam)
-{
-    Vec4f p{data.x,data.y,data.z,1};
-    // std::cout<<"p: "<<p<<std::endl;
-    Vec4f a=cam.projMat*p;
-    // std::cout<<a<<std::endl;
-    float rw=1/a.w;
-    return Point3D{a.x*rw,a.y*rw,a.z*rw};
-}
+// Point3D Point3D::perspectiveProj(Camera& cam)
+// {
+//     Vec4f p{data.x,data.y,data.z,1};
+//     // std::cout<<"p: "<<p<<std::endl;
+//     Vec4f a=cam.projMat*p;
+//     // std::cout<<a<<std::endl;
+//     float rw=1/a.w;
+//     return Point3D{a.x*rw,a.y*rw,a.z*rw};
+// }
 
 // Point3D Point3D::orthographicTransform(const Camera& cam)
 // {
@@ -309,7 +342,7 @@ static Mat4f viewMatrix(const Camera& cam)
         Vec4f{sidedirection.y,up_normalized.y,-cam.lookdirection.y,0},
         Vec4f{sidedirection.z,up_normalized.z,-cam.lookdirection.z,0},
         {0,0,0,1}
-        }*translateMatrix(-cam.position.vec());
+        }*translateMatrix(-cam.position);
 }
 
 

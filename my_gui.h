@@ -1,8 +1,11 @@
 #pragma once
-#include<imgui.h>
-#include<backends/imgui_impl_glfw.h>
-#include<backends/imgui_impl_vulkan.h>
+// #include<imgui.h>
+// #include<backends/imgui_impl_glfw.h>
+// #include<backends/imgui_impl_vulkan.h>
 #include"my_window.h"
+
+
+
 class MyGui
 {
 public:
@@ -16,6 +19,12 @@ public:
     ImDrawData* drawData;
     MyGui(MySwapChain& _myswapChain):mywindow{_myswapChain.mydevice.mywindow},mydevice{_myswapChain.mydevice},myswapChain{_myswapChain}
     {}
+
+    bool anyWindowFocused()
+    {
+        return ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
+    }
+
 
     /**
      * @brief init imgui, upload font

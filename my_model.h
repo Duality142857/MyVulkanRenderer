@@ -1,9 +1,9 @@
 #pragma once
 
 #include"my_buffer.h"
-#define TINYOBJLOADER_IMPLEMENTATION
-#include"ext/tiny_obj_loader.h"
-#include<unordered_map>
+// #define TINYOBJLOADER_IMPLEMENTATION
+// #include"ext/tiny_obj_loader.h"
+// #include<unordered_map>
 #include"my_sphere.h"
 
 static const MyGeo::Vec2f noTextureUV{-1,-1};
@@ -101,6 +101,8 @@ public:
     MyBuffer indexBuffer{mydevice};
     std::vector<MyVertex_Default> vertices;
     std::vector<uint32_t> indices;
+    MyGeo::Vec3f ks,kd;
+
     MyModel(MyDevice& mydevice,MySwapChain& myswapChain):mydevice{mydevice},myswapChain{myswapChain}
     {
 
@@ -293,6 +295,7 @@ public:
     VkDeviceMemory textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
+
     
     const std::string& filename;
     ExtModel(int modelId,MyDevice& mydevice, MySwapChain& myswapChain, const std::string& filename):MyModel{mydevice,myswapChain},filename{filename}
@@ -305,7 +308,7 @@ public:
         indices.clear();
 
         tinyobj::ObjReaderConfig reader_config;
-        reader_config.mtl_search_path="../resources/tex-models";
+        reader_config.mtl_search_path="../resources";
         tinyobj::ObjReader reader;
         if (!reader.ParseFromFile(filename, reader_config)) 
         {
@@ -318,6 +321,19 @@ public:
         auto& attrib = reader.GetAttrib();
         auto& shapes = reader.GetShapes();
         auto& materials = reader.GetMaterials();  
+        for(auto& mat : materials)
+        {
+            // if(mat.name=="材质")
+            {
+                ks={mat.specular[0],mat.specular[1],mat.specular[2]};
+                kd={mat.diffuse[0],mat.diffuse[1],mat.diffuse[2]};
+                std::cout<<"ks: "<<ks<<std::endl;
+                std::cout<<"kd: "<<kd<<std::endl;
+
+                break;
+            }
+        }
+
         std::cout<<"num of shapes: "<<shapes.size()<<std::endl;
         std::unordered_map<MyVertex_Default, uint32_t> uniqueVertices{};
         for (const auto &shape : shapes) 
@@ -325,6 +341,7 @@ public:
             for (const auto &index : shape.mesh.indices) 
             {
                 MyVertex_Default vertex{};
+                
 
                 if (index.vertex_index >= 0) 
                 {

@@ -1,155 +1,12 @@
 #pragma once
-// #define GLFW_INCLUDE_VULKAN
-// #include<GLFW/glfw3.h>
-// #include<mygeo/vec.h>
-// #include"my_event.h"
-
-// class MyWindow
-// {
-// public:
-//     MyWindow(Dispatcher& dispatcher,int width, int height):eventDispatcher{dispatcher}
-//     {
-//         std::cout<<"width&height "<<width<<" , "<<height<<std::endl;
-//         initWindow(width,height);
-//         // dispatcher.subscribe(MouseButton_Event,[this](const Event& event){onEvent(event);});
-//     }
-//     Dispatcher& eventDispatcher;
-
-
-//     GLFWwindow* window;
-//     float mousescrollVal=0.f;
-//     bool leftmousePressed=false;
-//     bool rightmousePressed=false;
-
-//     MyGeo::Vec2f leftDragVec{0,0};
-//     MyGeo::Vec2f rightDragVec{0,0};
-
-    
-//     MyGeo::Vec2f leftStartPos{0,0};
-//     MyGeo::Vec2f rightStartPos{0,0};
-
-
-//     bool framebufferResized=false;
-
-//     // void onEvent(const Event& event)
-//     // {
-//     //     switch (event.type())
-//     //     {
-//     //         case MouseButton:
-//     //         {
-                
-//     //             break;
-//     //         }
-//     //         case MouseDrag:
-//     //         {
-
-//     //             break;
-//     //         }
-        
-//     //         default:
-//     //             break;
-//     //     }
-//     // }
-
-//     void initWindow(int width, int height)
-//     {
-//         glfwInit();
-//         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-//         window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
-//         glfwSetWindowUserPointer(window, &eventDispatcher);
-//     // static void framebufferResizeCallback(GLFWwindow* window, int width, int height) 
-//     // {
-//     //     auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
-//     //     mywindow->framebufferResized = true;
-//     // }
-
-//         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-
-//         glfwSetScrollCallback(window, scroll_callback);
-//         glfwSetMouseButtonCallback(window,mousebutton_callback);
-//         glfwSetCursorPosCallback(window,cursor_position_callback);
-        
-//     }
-
-
-//     static void mousebutton_callback(GLFWwindow* window, int button, int action, int mods)
-//     {
-//         MouseButtonEvent event{button,action};
-//         auto dispatcher = reinterpret_cast<Dispatcher*>(glfwGetWindowUserPointer(window));
-//         dispatcher->dispatch(event);
-        
-
-//         auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
-//         if(button==GLFW_MOUSE_BUTTON_LEFT  && action==GLFW_PRESS)
-//         {
-//             mywindow->leftDragVec={0,0};
-//             double x,y;
-//             glfwGetCursorPos(window,&x,&y);
-//             mywindow->leftStartPos={(float)x,(float)y};
-//             mywindow->leftmousePressed=true;
-//         }
-//         if(button==GLFW_MOUSE_BUTTON_RIGHT  && action==GLFW_PRESS)
-//         {
-//             mywindow->rightDragVec={0,0};
-//             double x,y;
-//             glfwGetCursorPos(window,&x,&y);
-//             mywindow->rightStartPos={(float)x,(float)y};
-//             mywindow->rightmousePressed=true;
-//         }
-//         if(button==GLFW_MOUSE_BUTTON_LEFT && action==GLFW_RELEASE)
-//         {
-//             mywindow->leftmousePressed=false;
-//         }
-//         if(button==GLFW_MOUSE_BUTTON_RIGHT && action==GLFW_RELEASE)
-//         {
-//             mywindow->rightmousePressed=false;
-//         }
-
-//     }
-
-//     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-//     {
-//         auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
-//         if(mywindow->leftmousePressed)
-//         {
-//             mywindow->leftDragVec=MyGeo::Vec2f{(float)xpos,(float)ypos}-mywindow->leftStartPos;
-//             mywindow->leftDragVec.y=-mywindow->leftDragVec.y;
-//         }
-//         if(mywindow->rightmousePressed)
-//         {
-//             mywindow->rightDragVec=MyGeo::Vec2f{(float)xpos,(float)ypos}-mywindow->rightStartPos;
-//             mywindow->rightDragVec.y=-mywindow->rightDragVec.y;
-//             mywindow->rightDragVec.x=-mywindow->rightDragVec.x;
-//         }
-//     }
-
-//     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-//     {
-//         auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
-//         mywindow->mousescrollVal+=yoffset;
-//     }
-
-//     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) 
-//     {
-//         auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
-//         mywindow->framebufferResized = true;
-//     }
-
-//     void cleanup()
-//     {
-//         glfwDestroyWindow(window);
-//         glfwTerminate();
-//     }
-
-
-// };
-
-
-class MyWindow
+#include<mygeo/vec.h>
+#include<GLFW/glfw3.h>
+#include"my_event.h"
+class Window
 {
 public:
     Dispatcher dispatcher;
-    MyWindow(int width, int height):width{width},height{height}
+    Window(int width, int height):width{width},height{height}
     {
         // std::cout<<"width&height "<<width<<" , "<<height<<std::endl;
         initWindow(width,height);
@@ -200,7 +57,7 @@ public:
         lastCursorPosition=currentCursorPosition;
         currentCursorPosition=getCursorPos(window);
         MyGeo::Vec2f mouseDelta=currentCursorPosition-lastCursorPosition;
-        // std::cout<<"mouseDelta "<<mouseDelta<<std::endl;
+        std::cout<<"mouseDelta "<<mouseDelta<<std::endl;
         
         if((leftmousePressed || rightmousePressed) && mouseDelta.norm2()>2)
         {
@@ -254,8 +111,8 @@ public:
             const MouseDragEvent& event=*reinterpret_cast<const MouseDragEvent*>(&e);
             if(event.button==GLFW_MOUSE_BUTTON_LEFT)
             {
-                dragAngle=1500.f*event.dragVec.norm2()/(width*height);
-                MyGeo::Vec3f dragVec_normalized=MyGeo::Vec3f{event.dragVec.x,-event.dragVec.y,0.f}.normalVec();
+                dragAngle=10.f*event.dragVec.norm2()/(width*height);
+                MyGeo::Vec3f dragVec_normalized=MyGeo::Vec3f{event.dragVec.x,event.dragVec.y,0.f}.normalVec();
                 dragAxis=dragVec_normalized.cross({0,0,1});
             }
             else//right 
@@ -288,7 +145,7 @@ public:
         dispatcher->dispatch(event);
         
 
-        auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
+        auto mywindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if(button==GLFW_MOUSE_BUTTON_LEFT  && action==GLFW_PRESS)
         {
             mywindow->leftDragVec={0,0};
@@ -318,7 +175,7 @@ public:
 
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
     {
-        auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
+        auto mywindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         if(mywindow->leftmousePressed)
         {
             mywindow->leftDragVec=MyGeo::Vec2f{(float)xpos,(float)ypos}-mywindow->leftStartPos;
@@ -334,13 +191,13 @@ public:
 
     static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
-        auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
+        auto mywindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         mywindow->mousescrollVal+=yoffset;
     }
 
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height) 
     {
-        auto mywindow = reinterpret_cast<MyWindow*>(glfwGetWindowUserPointer(window));
+        auto mywindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
         mywindow->framebufferResized = true;
     }
 

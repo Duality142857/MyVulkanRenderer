@@ -1,16 +1,17 @@
 #pragma once
 #include"my_pipeline.h"
-#include<chrono>
-#include<mygeo/geo.h>
-#include<functional>
-#include"time/mytime.h"
-#include"cornell.h"
+// #include"my_event.h"
+// #include<chrono>
+// #include<mygeo/geo.h>
+// #include<functional>
+// #include"time/mytime.h"
+// #include"cornell.h"
 #include"my_model.h"
-#include"geometry/transforms.h"
+// #include"geometry/transforms.h"
 
-#include<imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_vulkan.h>
+// #include<imgui.h>
+// #include <backends/imgui_impl_glfw.h>
+// #include <backends/imgui_impl_vulkan.h>
 // static constexpr int FrameRate=30;
 // static constexpr int FrameInterval=1000/FrameRate;
 static float mycolor[4]={0.5,0.5,0.5,1.0};
@@ -23,6 +24,7 @@ public:
     MyPipeline& mypipeline;
     MyDevice& mydevice;
     MySwapChain& myswapChain;
+    Dispatcher& eventDispatcher;
     // MyTexture mytexture{mydevice,"D:/approot/MyVulkan/resources/tex-models/bunny-atlas.jpg"};
     // BoxModel box{mydevice,myswapChain};
     // ExtModel extmodel{mydevice,myswapChain,"../resources/Marry.obj"};
@@ -40,8 +42,9 @@ public:
     size_t currentFrame = 0;
 static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
-    MyRenderer(MyPipeline& mypipeline):mypipeline{mypipeline},mydevice{mypipeline.mydevice},myswapChain{mypipeline.myswapChain}
+    MyRenderer(Dispatcher& dispatcher, MyPipeline& mypipeline):mypipeline{mypipeline},mydevice{mypipeline.mydevice},myswapChain{mypipeline.myswapChain},eventDispatcher{dispatcher}
     {
+        eventDispatcher.subscribe(WindowResized_Event,[this](const Event& event){onEvent(event);});
         init();
     }
 
@@ -88,8 +91,11 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mydevice.mywindow.framebufferResized) 
         {
-            mydevice.mywindow.framebufferResized = false;
-            recreateSwapChain();
+            // mydevice.mywindow.framebufferResized = false;
+            // recreateSwapChain();
+            WindowResizedEvent event;
+            std::cout<<"dispatch!"<<std::endl;
+            eventDispatcher.dispatch(event);
         } 
         else if (result != VK_SUCCESS) 
         {
@@ -97,6 +103,17 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
         }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+
+    void onEvent(const Event& event)
+    {
+        if(event.type()==WindowResized_Event)
+        {
+            std::cout<<"dealing with WindowResizedEvent"<<std::endl;
+            mydevice.mywindow.framebufferResized = false;
+            recreateSwapChain();
+        }
     }
 
     void recreateSwapChain()
