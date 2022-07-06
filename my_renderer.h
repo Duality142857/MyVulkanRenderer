@@ -21,7 +21,8 @@ class MyRenderer
 {
     
 public:
-    MyPipeline& mypipeline;
+    MyPipeline& scenePipeline;//graphics
+    MyPipeline& shadowPipeline;//shadow
     MyDevice& mydevice;
     MySwapChain& myswapChain;
     Dispatcher& eventDispatcher;
@@ -33,16 +34,12 @@ public:
 
     // ExtModel extmodel{mydevice,myswapChain,"../resources/tex-models/cat.obj"};
 
-
-    
-
-
     std::vector<VkCommandBuffer> commandBuffers;
     
     size_t currentFrame = 0;
 static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
-    MyRenderer(Dispatcher& dispatcher, MyPipeline& mypipeline):mypipeline{mypipeline},mydevice{mypipeline.mydevice},myswapChain{mypipeline.myswapChain},eventDispatcher{dispatcher}
+    MyRenderer(Dispatcher& dispatcher, MyPipeline& scenePipeline,MyPipeline& shadowPipeline):scenePipeline{scenePipeline},shadowPipeline{shadowPipeline},mydevice{scenePipeline.mydevice},myswapChain{scenePipeline.myswapChain},eventDispatcher{dispatcher}
     {
         eventDispatcher.subscribe(WindowResized_Event,[this](const Event& event){onEvent(event);});
         init();
@@ -131,12 +128,19 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
         reboot();
     }
 
+    // std::string vertexShaderFile="../shaders/vert_a.spv",fragmentShaderFile="../shaders/frag_a.spv";
 
+    // void setShaderFile(const std::string& vs, const std::string& fs)
+    // {
+    //     vertexShaderFile=vs;
+    //     fragmentShaderFile=fs;
+    // }
 
     void reboot()
     {
         myswapChain.init();
-        mypipeline.createGraphicsPipeline();
+        scenePipeline.init();
+        // mypipeline.createGraphicsPipeline(vertexShaderFile,fragmentShaderFile);
         init();
     }
 
@@ -144,7 +148,8 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
     {
         myswapChain.clear();
         // myappdata.clear();
-        mypipeline.clear();
+        scenePipeline.clear();
+        // shadowPipeline.clear();
         // vkFreeCommandBuffers(mydevice.device,mydevice.commandPool,static_cast<uint32_t>(commandBuffers.size()),commandBuffers.data());
     }
 
@@ -152,7 +157,9 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
     {
         myswapChain.cleanup();
         // myappdata.cleanup();
-        mypipeline.cleanup();
+        scenePipeline.clear();
+        shadowPipeline.clear();
+        // createPipelineLayout();
         vkFreeCommandBuffers(mydevice.device,mydevice.commandPool,static_cast<uint32_t>(commandBuffers.size()),commandBuffers.data());
     }
 
@@ -197,30 +204,60 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
         
     }
 
+void beginCommandBuffer(VkCommandBuffer cmdbuffer)
+{
+    VkCommandBufferBeginInfo cmdbeginInfo{};
+    cmdbeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    if(vkBeginCommandBuffer(cmdbuffer,&cmdbeginInfo)!=VK_SUCCESS)
+    { 
+        std::cerr<<" file "<<__FILE__<<" line "<<__LINE__<<std::endl;
+        throw std::runtime_error("failed to begin recording!");
+    }
+}
 
-    void startRecord(VkCommandBuffer cmdbuffer, VkFramebuffer framebuffer, VkPipeline pipeline) 
+void beginRenderPass(VkCommandBuffer cmdbuffer, VkRenderPass renderPass, VkFramebuffer framebuffer, VkPipeline pipeline)
+{
+    VkRenderPassBeginInfo renderpassBeginInfo{};
+    renderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderpassBeginInfo.renderPass = myswapChain.renderPass;
+    renderpassBeginInfo.framebuffer = framebuffer;
+    renderpassBeginInfo.renderArea.offset = {0, 0};
+    renderpassBeginInfo.renderArea.extent = myswapChain.swapChainExtent;
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+    renderpassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderpassBeginInfo.pClearValues = clearValues.data();  
+    vkCmdBeginRenderPass(cmdbuffer, &renderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);    
+
+}
+
+    void startRecord(VkCommandBuffer cmdbuffer, VkRenderPass renderPass, VkFramebuffer framebuffer, VkPipeline pipeline) 
     {
-        VkCommandBufferBeginInfo cmdbeginInfo{};
-        cmdbeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        if(vkBeginCommandBuffer(cmdbuffer,&cmdbeginInfo)!=VK_SUCCESS)
-        { 
-            std::cerr<<" file "<<__FILE__<<" line "<<__LINE__<<std::endl;
-            throw std::runtime_error("failed to begin recording!");
-        }
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = myswapChain.renderPass;
-        renderPassInfo.framebuffer = framebuffer;
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = myswapChain.swapChainExtent;
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clearValues[1].depthStencil = {1.0f, 0};
+        beginCommandBuffer(cmdbuffer);
+        beginRenderPass(cmdbuffer,myswapChain.renderPass,framebuffer,pipeline);
+        // VkCommandBufferBeginInfo cmdbeginInfo{};
+        // cmdbeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        // if(vkBeginCommandBuffer(cmdbuffer,&cmdbeginInfo)!=VK_SUCCESS)
+        // { 
+        //     std::cerr<<" file "<<__FILE__<<" line "<<__LINE__<<std::endl;
+        //     throw std::runtime_error("failed to begin recording!");
+        // }
+        // VkRenderPassBeginInfo renderPassInfo{};
+        // renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        // renderPassInfo.renderPass = myswapChain.renderPass;
+        // renderPassInfo.framebuffer = framebuffer;
+        // renderPassInfo.renderArea.offset = {0, 0};
+        // renderPassInfo.renderArea.extent = myswapChain.swapChainExtent;
+        // std::array<VkClearValue, 2> clearValues{};
+        // clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        // clearValues[1].depthStencil = {1.0f, 0};
 
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();  
-        vkCmdBeginRenderPass(cmdbuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        // renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        // renderPassInfo.pClearValues = clearValues.data();  
+        // vkCmdBeginRenderPass(cmdbuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        // vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
     void endRecord(VkCommandBuffer cmdbuffer)

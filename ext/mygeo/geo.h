@@ -125,13 +125,10 @@ struct Camera
     //     updirection.normalize();
     // }
 
-    Camera(const Vec3f& pos, const Vec3f& lookat, const Vec3f& up): position{pos},lookat{lookat},updirection{up.normalVec()},lookdirection{(lookat-position).normalVec()}
+    Camera(const Vec3f& pos, const Vec3f& lookat, const Vec3f& up, float near=-0.1, float far=-50, float fovY=45, float aspect=1.f): position{pos},lookat{lookat},updirection{up.normalVec()},lookdirection{(lookat-position).normalVec()},n{near},f{far}
     {
-        // updirection.normalize();
-        // std::cout<<"position: "<<position<<std::endl;
-        // std::cout<<"lookat: "<<lookat<<std::endl;
-        // std::cout<<"updirection: "<<updirection<<std::endl;
-        // std::cout<<"lookdirection: "<<lookdirection<<std::endl;
+        setFov(fovY,aspect);
+        updateMat();
     }
 
 

@@ -56,8 +56,8 @@ public:
     MyWindow mywindow{width,height};
     MyDevice mydevice{mywindow};
     MySwapChain myswapChain{mydevice};
-    DescriptorStats stats{1,1,4,myswapChain.images.size()};
-    MyDescriptors mydescriptors{myswapChain,stats};
+    // DescriptorStats stats{1,1,4,myswapChain.images.size()};
+    MyDescriptors mydescriptors{myswapChain};
     
     MyPipeline mypipeline{mydescriptors};
     MyRenderer renderer{eventDispatcher,mypipeline};
@@ -124,8 +124,11 @@ public:
 
     virtual void init()
     {
+        mypipeline.createGraphicsPipeline("../shaders/vert_a.spv","../shaders/frag_a.spv");
+        
         gui.init();
         createUniformBuffers();
+        
             // ShapeModel sphere{2,mydevice,myswapChain,GeoShape::Sphere,{3.f}};
     // ShapeModel sphereLight{0,mydevice,myswapChain,GeoShape::Sphere,{0.2f}};
         addModel_Shape(0,GeoShape::Sphere,{0.03f});
@@ -187,10 +190,11 @@ public:
         }
         vkDeviceWaitIdle(mydevice.device);
     }
+    
     virtual void recordCommand(VkCommandBuffer cmdBuffer, int imageIndex)
     {
         vkResetCommandBuffer(cmdBuffer,VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-        renderer.startRecord(cmdBuffer,myswapChain.framebuffers[imageIndex],mypipeline.graphicsPipeline);
+        renderer.startRecord(cmdBuffer,myswapChain.renderPass,myswapChain.framebuffers[imageIndex],mypipeline.pipeline);
         // sphereLight.bind(cmdBuffer);
         // sphereLight.draw(cmdBuffer,sphereLight.indices.size(),1);
         // extmodel.bind(cmdBuffer);
@@ -274,7 +278,7 @@ static MyGeo::Vec3f xaxis,yaxis,zaxis;
         {
             MyGeo::Vec3f rightDragVec={mydevice.mywindow.rightDragVec,0};
             camPos+=0.2*(xaxis*(rightDragVec.x/(float)myswapChain.swapChainExtent.width)-yaxis*(rightDragVec.y/(float)myswapChain.swapChainExtent.height));
-            lookat+=0.2*(xaxis*(rightDragVec.x/(float)myswapChain.swapChainExtent.width)-yaxis*(rightDragVec.y/(float)myswapChain.swapChainExtent.height));
+            lookat=camPos;
             cam.lookat=lookat;
             cam.position=camPos;
         }
@@ -301,14 +305,14 @@ private:
 
     virtual void updateDescriptorSets(VkCommandBuffer cmdBuffer, uint32_t imageIndex)
     {   
-        uint32_t setIndex=imageIndex%mydescriptors.stats.maxSetNum;
+        uint32_t setIndex=imageIndex%mydescriptors.frameNum;
 
         VkDescriptorBufferInfo bufferInfo=mydescriptors.getBufferInfo(uniformBuffers[imageIndex],sizeof(UniformBufferObject));
         VkDescriptorImageInfo imageInfo=mydescriptors.getImageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,mytexture.textureImageView,mytexture.textureSampler);
         
         std::array<VkWriteDescriptorSet,2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = mydescriptors.descriptorSets[setIndex];
+        descriptorWrites[0].dstSet = mydescriptors.descriptorSets.scene[setIndex];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -316,7 +320,7 @@ private:
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = mydescriptors.descriptorSets[setIndex];
+        descriptorWrites[1].dstSet = mydescriptors.descriptorSets.scene[setIndex];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -325,7 +329,7 @@ private:
         
         vkUpdateDescriptorSets(mydevice.device,descriptorWrites.size(),descriptorWrites.data(),0,nullptr);
 
-        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mypipeline.pipelineLayout, 0, 1, &mydescriptors.descriptorSets[setIndex], 0, nullptr);
+        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mypipeline.pipelineLayout, 0, 1, &mydescriptors.descriptorSets.scene[setIndex], 0, nullptr);
 
 
     }
@@ -367,7 +371,7 @@ private:
         // auto mp=ImGui::GetMousePos();
         // std::cout<<"mouse pos: "<<mp.x<<','<<mp.y<<std::endl;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+        // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
         ImGui::SetNextWindowPos(ImVec2(10, 10));
         ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 

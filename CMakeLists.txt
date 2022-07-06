@@ -40,6 +40,13 @@ add_library(imguithings STATIC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI
 add_executable(MyVulkan app.cpp)
 target_precompile_headers(MyVulkan PRIVATE my_pch.h)
 target_link_libraries(MyVulkan imguithings)
+# add_executable(test test.cpp)
+
+
+add_executable(shadow shadowmap.cpp)
+target_precompile_headers(shadow PRIVATE my_pch.h)
+target_link_libraries(shadow imguithings)
+
 
 # add_executable(InputTest inputTest.cpp)
 # target_precompile_headers(InputTest PRIVATE my_pch.h)
@@ -50,6 +57,20 @@ target_link_libraries(MyVulkan imguithings)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(MyVulkan
+    -lglfw3
+    -lvulkan
+    -ldl
+    -lGL
+    -lrt
+    -lm
+    -lXrandr
+    -lXi
+    -lX11
+    -lpthread
+    -lXinerama
+    -lXcursor
+    )
+    target_link_libraries(shadow
     -lglfw3
     -lvulkan
     -ldl

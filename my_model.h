@@ -341,8 +341,7 @@ public:
             for (const auto &index : shape.mesh.indices) 
             {
                 MyVertex_Default vertex{};
-                
-
+                vertex.modelId=1;
                 if (index.vertex_index >= 0) 
                 {
                     vertex.position = {

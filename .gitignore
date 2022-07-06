@@ -5,3 +5,5 @@ glfw-3.3.6/CMake
 *.tar.gz
 30_multisampling.cpp
 *.zip
+resources/*/
+doc/
