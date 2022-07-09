@@ -43,10 +43,15 @@ target_link_libraries(MyVulkan imguithings)
 # add_executable(test test.cpp)
 
 
-add_executable(shadow shadowmap.cpp)
+add_executable(shadow shadowmap.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp)
 target_precompile_headers(shadow PRIVATE my_pch.h)
 target_link_libraries(shadow imguithings)
 
+
+add_executable(instancing instancing.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp src/my_renderer.cpp src/my_swapchain.cpp src/my_texture.cpp)
+
+target_precompile_headers(instancing PRIVATE my_pch.h)
+target_link_libraries(instancing imguithings)
 
 # add_executable(InputTest inputTest.cpp)
 # target_precompile_headers(InputTest PRIVATE my_pch.h)
@@ -71,6 +76,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     -lXcursor
     )
     target_link_libraries(shadow
+    -lglfw3
+    -lvulkan
+    -ldl
+    -lGL
+    -lrt
+    -lm
+    -lXrandr
+    -lXi
+    -lX11
+    -lpthread
+    -lXinerama
+    -lXcursor
+    )
+    target_link_libraries(instancing
     -lglfw3
     -lvulkan
     -ldl

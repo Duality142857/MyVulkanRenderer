@@ -6,12 +6,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
-void test()
-{
-    glm::perspective(45,1,-1,-50);
-}
-
 // #include<GLFW/glfw3.h>
 // #include<iostream>
 #include"my_pch.h"
@@ -28,6 +22,8 @@ void test()
 #include"my_event.h"
 #include"my_inputsystem.h"
 #include"my_scene.h"
+#include"time/myrandom.h"
+#include"my_instance.h"
 
 // #define WITHLOG
 static inline void log(const std::string& msg)
@@ -36,6 +32,23 @@ static inline void log(const std::string& msg)
     std::cout<<msg<<std::endl;
 #endif
 }
+
+static constexpr int InstanceNum=100;
+
+
+static inline void initInstanceData(MyInstances<InstanceData>& myinstances)
+{
+    myinstances.instances.resize(InstanceNum);
+    for(auto& d:myinstances.instances)
+    {
+        d.scaling={1,1,1};
+        d.rotationAxis={0,1,0};
+        d.translation={10*myrand::randFloat()-5,10*myrand::randFloat(),10*myrand::randFloat()-5};
+        std::cout<<d.translation<<std::endl;
+    }
+    myinstances.createInstanceBuffer();
+}
+
 
 
 struct UBO_scene
@@ -49,6 +62,7 @@ struct UBO_scene
     alignas(16) MyGeo::Vec3f eyePos;
     alignas(16) MyGeo::Vec3f ks;
     alignas(16) MyGeo::Vec3f kd;
+    alignas(16) float time;
 };
 
 struct UBO_offscreen
@@ -62,7 +76,7 @@ struct UBO_offscreen
 
 
 
-class Shadow
+class Instancing
 {
 public:
     float fps=60.f;
@@ -81,19 +95,22 @@ public:
     MySwapChain myswapChain{mydevice};
     MyDescriptors mydescriptors{myswapChain};
 
-    MyPipeline scenePipeline{mydescriptors};
+    // MyPipeline scenePipeline{mydescriptors};
     MyPipeline shadowPipeline{mydescriptors};
+    MyPipeline instancePipeline{mydescriptors};
 
-    MyRenderer renderer{dispatcher,scenePipeline,shadowPipeline};
+    MyRenderer renderer{dispatcher,instancePipeline,shadowPipeline};
 
     MyTexture mytexture{mydevice,"../resources/MC003_Kozakura_Mari.png"};
     MyGui gui{myswapChain};
+
+    MyInstances<InstanceData> myinstances{mydevice,myswapChain};
 
     std::vector<MyBuffer> uniformBuffers_scene;
     std::vector<MyBuffer> uniformBuffers_offscreen;
 
     std::vector<std::shared_ptr<MyModel>> mymodels;
-
+    ShapeModel sphere{1,mydevice,myswapChain,GeoShape::Sphere,{0.1}};
     void addModel_Instance(int modelId, const MyModel& model)
     {
         mymodels.emplace_back(std::make_shared<InstanceModel>(model,MyGeo::translateMatrix({0,3,0})));
@@ -126,19 +143,25 @@ public:
 
     virtual void init()
     {
-        scenePipeline.createGraphicsPipeline("../shaders/shadowmapping/a.vert.spv","../shaders/shadowmapping/a.frag.spv");
-        shadowPipeline.createdepthPipeline("../shaders/shadowmapping/offscreen.vert.spv",0);
+        // scenePipeline.createGraphicsPipeline("../shaders/instancing/a.vert.spv","../shaders/instancing/a.frag.spv");
+        instancePipeline.createInstancePipeline("../shaders/instancing/a.vert.spv","../shaders/instancing/a.frag.spv");
+        shadowPipeline.createdepthPipeline("../shaders/instancing/offscreen.vert.spv",0);
         
         gui.init();
         createUniformBuffers();
-        addModel_Ext(1,"../resources/Marry.obj");
+        // addModel_Ext(1,"../resources/Marry.obj");
 
-        ShapeModel sphere{1,mydevice,myswapChain,GeoShape::Sphere,{1}};
-        addModel_Instance(1,sphere);
+        // ShapeModel sphere{1,mydevice,myswapChain,GeoShape::Sphere,{1}};
+
+
+        // addModel_Instance(1,sphere);
         
-        addModel_Shape(0,GeoShape::Sphere,{0.03f});
+        // addModel_Shape(0,GeoShape::Sphere,{0.03f});
         // addModel_Shape(2, GeoShape::Sphere,{2});
         addModel_Shape(2,GeoShape::Rect,{15,15});
+        initInstanceData(myinstances);
+        
+
     }
 
     virtual void cleanup()
@@ -156,6 +179,7 @@ public:
         uint32_t imageIndex=renderer.startFrame();
         log("update framedata scene");
         updateFrameData_scene(imageIndex);
+        updateFrameData_instance();
         log("update framedata offscreen");
         updateFrameData_offscreen(imageIndex);
         log("update descriptorsets");
@@ -203,17 +227,10 @@ public:
         uint32_t setIndex=imageIndex % mydescriptors.frameNum;
 
         vkResetCommandBuffer(cmdBuffer,VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-        // renderer.startRecord(cmdBuffer,myswapChain.renderPass,myswapChain.framebuffers[imageIndex],scenePipeline.pipeline);
         renderer.beginCommandBuffer(cmdBuffer);
 
         //offscreen cmds
         {
-            // renderer.beginRenderPass(
-            //     cmdBuffer,
-            //     myswapChain.offscreenRenderpass,
-            //     myswapChain.offscreenFrameBuffer,
-            //     offscreenPipeline.pipeline);//pipeline bound
-
             VkRenderPassBeginInfo renderpassBeginInfo{};
             renderpassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderpassBeginInfo.renderPass = myswapChain.offscreenRenderpass;
@@ -284,17 +301,27 @@ public:
             rect.offset.y=0.f;
             vkCmdSetScissor(cmdBuffer,0,1,&rect);
 
-            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,scenePipeline.pipelineLayout,0,1,&mydescriptors.descriptorSets.scene[setIndex],0,nullptr);
+            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,instancePipeline.pipelineLayout,0,1,&mydescriptors.descriptorSets.scene[setIndex],0,nullptr);
 
-            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, scenePipeline.pipeline);   
+            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, instancePipeline.pipeline);   
             
+            VkBuffer vertexBuffers[] = {sphere.vertexBuffer.buffer};
+            VkDeviceSize offsets[] = {0};
+
+            vkCmdBindVertexBuffers(cmdBuffer, 0, 1, vertexBuffers, offsets);
+            // myinstances.bind(cmdBuffer,1);
+            vkCmdBindVertexBuffers(cmdBuffer, 1, 1,&myinstances.instanceBuffer.buffer,offsets);
+
+            vkCmdBindIndexBuffer(cmdBuffer, sphere.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdDrawIndexed(cmdBuffer,sphere.indices.size(),InstanceNum,0,0,0);
+
             drawModels(cmdBuffer);
             ImGui_ImplVulkan_RenderDrawData(gui.drawData,cmdBuffer);
             vkCmdEndRenderPass(cmdBuffer);
         }
         if (vkEndCommandBuffer(cmdBuffer) != VK_SUCCESS)
             throw std::runtime_error("failed to record command buffer!");
-        // renderer.endRecord(cmdBuffer);
     }
 
 
@@ -343,6 +370,18 @@ public:
         vkUnmapMemory(mydevice.device, uniformBuffers_scene[currentImage].memory);
     }
 
+    void updateFrameData_instance()
+    {
+        for(auto& d:myinstances.instances)
+        {
+            MyGeo::Vec3f delta{0.1f*(myrand::randFloat()-0.5f),0.1f*(myrand::randFloat()-0.5f),0.1f*(myrand::randFloat()-0.5f)};
+            // std::cout<<delta<<std::endl;
+            d.translation+=delta;
+        }
+        myinstances.updateInstanceBuffer();
+        
+    }
+
     virtual void updateFrameData_scene(uint32_t currentImage) 
     {
         mywindow.tick();
@@ -354,6 +393,8 @@ public:
         static auto startTime=mytime::now();
         auto currentTime = mytime::now();
         float time_elapsed=mytime::getDuration<std::chrono::milliseconds>(startTime,currentTime)*0.0001f;
+        
+        
 
         if(!ImGuizmo::IsUsing() &&!gui.anyWindowFocused() && mydevice.mywindow.leftmousePressed && mywindow.dragAngle>0.1f) 
         {//
@@ -543,7 +584,7 @@ private:
 
 int main()
 {
-    Shadow shadowapp;
-    shadowapp.run();
+    Instancing app;
+    app.run();
     std::cout<<std::endl;
 }

@@ -54,7 +54,7 @@ struct SimpleEdge
 	}
 };
 
-void Icosahedron(SimpleMesh& mesh, float scale)
+static void Icosahedron(SimpleMesh& mesh, float scale)
 {
     const float t=(1.f+std::sqrt(5.f))*0.5f;
     float reciL=1.f/std::sqrt(1+t*t);
@@ -103,7 +103,7 @@ void Icosahedron(SimpleMesh& mesh, float scale)
 
 }
 
-uint32_t subdivideEdge(uint32_t f0, uint32_t f1, const MyGeo::Vec3f &v0, const MyGeo::Vec3f &v1, SimpleMesh &io_mesh, std::map<SimpleEdge, uint32_t> &io_divisions)
+static uint32_t subdivideEdge(uint32_t f0, uint32_t f1, const MyGeo::Vec3f &v0, const MyGeo::Vec3f &v1, SimpleMesh &io_mesh, std::map<SimpleEdge, uint32_t> &io_divisions)
 {
 	const SimpleEdge edge(f0, f1);
 	auto it = io_divisions.find(edge);
@@ -119,7 +119,7 @@ uint32_t subdivideEdge(uint32_t f0, uint32_t f1, const MyGeo::Vec3f &v0, const M
 	return f;
 }
 
-void SubdivideMesh(const SimpleMesh &meshIn, SimpleMesh &meshOut)
+static void SubdivideMesh(const SimpleMesh &meshIn, SimpleMesh &meshOut)
 {
 	meshOut.vertices = meshIn.vertices;
 
