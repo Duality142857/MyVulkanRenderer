@@ -33,6 +33,7 @@ struct PipelineConfigFunctions
         )
     {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        vertexInputInfo.sType=VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount= bindingDescriptions.size();
         vertexInputInfo.vertexAttributeDescriptionCount=attributeDescriptions.size();
         vertexInputInfo.pVertexBindingDescriptions=bindingDescriptions.data();
@@ -68,7 +69,7 @@ struct PipelineConfigFunctions
         rasterizerStateCI.lineWidth = 1.0f;
         rasterizerStateCI.cullMode = cullMode;
         rasterizerStateCI.frontFace = frontFace;
-        rasterizerStateCI.depthBiasEnable = VK_FALSE;
+        rasterizerStateCI.depthBiasEnable = depthBiasEnable;
         return rasterizerStateCI;
     }
 
@@ -101,7 +102,7 @@ struct PipelineConfigFunctions
         return cba;
     }
 
-    static VkPipelineColorBlendStateCreateInfo colorBlendingStateCreateInfo(VkPipelineColorBlendAttachmentState* cba)
+    static VkPipelineColorBlendStateCreateInfo colorBlendingStateCreateInfo(uint32_t attachmentCount, VkPipelineColorBlendAttachmentState* cba)
     {
         VkPipelineColorBlendStateCreateInfo cbs{};
         cbs.sType=VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;

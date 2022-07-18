@@ -1,8 +1,10 @@
 #include"../my_pipeline.h"
 #include"../my_shader.h"
 #include"../my_pipelineConfig.h"
-void MyPipeline::createGraphicsPipeline(const std::string& vertexShaderFile, const std::string& fragmentShaderFile)
+void MyPipeline::createGraphicsPipeline(const std::string& _vertexShaderFile, const std::string& _fragmentShaderFile)
 {
+    vertexShaderFile=_vertexShaderFile;
+    fragmentShaderFile=_fragmentShaderFile;
     MyShader vertexShader{mydevice,vertexShaderFile,VK_SHADER_STAGE_VERTEX_BIT};
     MyShader fragmentShader{mydevice,fragmentShaderFile,VK_SHADER_STAGE_FRAGMENT_BIT};
     auto vertShaderStageInfo=vertexShader.getShaderStageCreateInfo();
@@ -36,7 +38,7 @@ void MyPipeline::createGraphicsPipeline(const std::string& vertexShaderFile, con
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment=PipelineConfigFunctions::colorBlendAttachmentState();
 
-    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI=PipelineConfigFunctions::colorBlendingStateCreateInfo(&colorBlendAttachment);
+    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI=PipelineConfigFunctions::colorBlendingStateCreateInfo(1,&colorBlendAttachment);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -59,9 +61,10 @@ void MyPipeline::createGraphicsPipeline(const std::string& vertexShaderFile, con
     if (vkCreateGraphicsPipelines(mydevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
         throw std::runtime_error("failed to create graphics pipeline!");
 }
-
-void MyPipeline::createInstancePipeline(const std::string& vertexShaderFile, const std::string& fragmentShaderFile)
+void MyPipeline::createInstancePipeline(const std::string& _vertexShaderFile, const std::string& _fragmentShaderFile)
 {
+    vertexShaderFile=_vertexShaderFile;
+    fragmentShaderFile=_fragmentShaderFile;
     MyShader vertexShader{mydevice,vertexShaderFile,VK_SHADER_STAGE_VERTEX_BIT};
     MyShader fragmentShader{mydevice,fragmentShaderFile,VK_SHADER_STAGE_FRAGMENT_BIT};
     auto vertShaderStageInfo=vertexShader.getShaderStageCreateInfo();
@@ -103,7 +106,7 @@ void MyPipeline::createInstancePipeline(const std::string& vertexShaderFile, con
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment=PipelineConfigFunctions::colorBlendAttachmentState();
 
-    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI=PipelineConfigFunctions::colorBlendingStateCreateInfo(&colorBlendAttachment);
+    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI=PipelineConfigFunctions::colorBlendingStateCreateInfo(1,&colorBlendAttachment);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -125,13 +128,12 @@ void MyPipeline::createInstancePipeline(const std::string& vertexShaderFile, con
     if (vkCreateGraphicsPipelines(mydevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
         throw std::runtime_error("failed to create graphics pipeline!");
 }
-
 void MyPipeline::createdepthPipeline(const std::string& vertexShaderFile, uint32_t pcf)
 {
     pipelineType=PipelineType::Offscreen;
     MyShader vertexShader{mydevice,vertexShaderFile,VK_SHADER_STAGE_VERTEX_BIT};
     auto vertShaderStageInfo=vertexShader.getShaderStageCreateInfo();
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages{vertShaderStageInfo};
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {vertShaderStageInfo};
 
     std::vector<VkVertexInputBindingDescription> bindingDescriptions{MyVertex_Default::getBindingDescription()};
 
@@ -143,11 +145,8 @@ void MyPipeline::createdepthPipeline(const std::string& vertexShaderFile, uint32
     
     VkPipelineViewportStateCreateInfo viewportStateCI{};
     viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    
     viewportStateCI.viewportCount = 1;
-    viewportStateCI.pViewports = nullptr;
     viewportStateCI.scissorCount = 1;
-    viewportStateCI.pScissors = nullptr;
 
     uint32_t enablePCF=pcf;
     VkSpecializationMapEntry sme{};
@@ -166,33 +165,13 @@ void MyPipeline::createdepthPipeline(const std::string& vertexShaderFile, uint32
     
     VkPipelineRasterizationStateCreateInfo rasterizerStateCI=PipelineConfigFunctions::rasterizerStateCreateInfo(VK_POLYGON_MODE_FILL,VK_CULL_MODE_BACK_BIT,VK_FRONT_FACE_COUNTER_CLOCKWISE,VK_TRUE);
     
-    VkPipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    VkPipelineMultisampleStateCreateInfo multisampling=PipelineConfigFunctions::multisampleCreateInfo();
 
-    VkPipelineDepthStencilStateCreateInfo depthStencil{};
-    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.stencilTestEnable = VK_FALSE;
+    VkPipelineDepthStencilStateCreateInfo depthStencil=PipelineConfigFunctions::depthStencilStateCreateInfo();
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
+    VkPipelineColorBlendAttachmentState colorBlendAttachment=PipelineConfigFunctions::colorBlendAttachmentState();
 
-    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI{};
-    colorBlendingStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlendingStateCI.logicOpEnable = VK_FALSE;
-    colorBlendingStateCI.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendingStateCI.attachmentCount = 0;
-    colorBlendingStateCI.pAttachments = &colorBlendAttachment;
-    colorBlendingStateCI.blendConstants[0] = 0.0f;
-    colorBlendingStateCI.blendConstants[1] = 0.0f;
-    colorBlendingStateCI.blendConstants[2] = 0.0f;
-    colorBlendingStateCI.blendConstants[3] = 0.0f;
+    VkPipelineColorBlendStateCreateInfo colorBlendingStateCI=PipelineConfigFunctions::colorBlendingStateCreateInfo(0,&colorBlendAttachment);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
