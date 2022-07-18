@@ -40,9 +40,10 @@ struct MyVertex_Default
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions(uint32_t binding=0,uint32_t startLocation=0) 
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(uint32_t binding=0,uint32_t startLocation=0) 
     {
-        std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+        attributeDescriptions.resize(5);
 
         attributeDescriptions[0]=attribDesc(binding,startLocation,VK_FORMAT_R32G32B32_SFLOAT,offsetof(MyVertex_Default, position));
 

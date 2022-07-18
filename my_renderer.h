@@ -45,7 +45,6 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
     void endFrame(uint32_t imageIndex);
 
-
     void onEvent(const Event& event);
 
     void recreateSwapChain();
@@ -56,8 +55,6 @@ static constexpr int MAX_FRAMES_IN_FLIGHT=2;
 
     void cleanup();
     virtual void allocateCommandBuffers();
-
-
 
     uint32_t startFrame();
 

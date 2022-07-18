@@ -28,9 +28,10 @@ struct InstanceData
         desc.offset=offset;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions(uint32_t binding, uint32_t startLocation) 
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions(uint32_t binding, uint32_t startLocation) 
     {
-        std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+        attributeDescriptions.resize(4);
 
         attributeDescriptions[0].binding = binding;
         attributeDescriptions[0].location = startLocation;
@@ -68,9 +69,9 @@ public:
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
-enum PipelineType{
-    Graphics,Offscreen
-};
+    enum PipelineType{
+        Graphics,Offscreen,Compute
+    };
     PipelineType pipelineType{Graphics};
     
     std::string vertexShaderFile;
@@ -92,6 +93,7 @@ enum PipelineType{
             throw std::runtime_error("failed to create pipeline layout!");
     }
   
+    //used to recreateswapchain
     void init()
     {
         if(pipelineType==Graphics)
@@ -102,7 +104,6 @@ enum PipelineType{
 
 
     virtual void createdepthPipeline(const std::string& vertexShaderFile, uint32_t pcf=0);
-
 
     virtual void createGraphicsPipeline(const std::string& _vertexShaderFile, const std::string& _fragmentShaderFile);
     
@@ -117,25 +118,4 @@ enum PipelineType{
     {
         clear();
     }
-
-    static std::vector<char> readFile(const std::string& filename) 
-    {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-        if (!file.is_open()) {
-            throw std::runtime_error("failed to open file!");
-        }
-
-        size_t fileSize = (size_t) file.tellg();
-        std::vector<char> buffer(fileSize);
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-
-        file.close();
-
-        return buffer;
-    }
-    VkShaderModule createShaderModule(const std::vector<char>& code);
-
 };

@@ -24,6 +24,8 @@
 #include"my_scene.h"
 #include"time/myrandom.h"
 #include"my_instance.h"
+#include"my_shader.h"
+#include"my_pipelineConfig.h"
 
 // #define WITHLOG
 static inline void log(const std::string& msg)
@@ -578,8 +580,31 @@ private:
 
 };
 
+constexpr double a=1, b=2,c=3;
 
+constexpr double f(double x)
+{
+    return 1.-x;
+}
 
+constexpr double df(double x)
+{
+    const auto x2=x*x;
+    const auto x3=x*x2;
+    return 4*x3+3*a*x2+2*b*x+c;
+}
+
+constexpr auto solve()
+{
+    double x1=5,x2;
+    constexpr double epsilon=1e-10;
+    while(true)
+    {
+        x2=x1-f(x1)/df(x1);
+        if(false) return x1;
+        x1=x2;
+    }
+}
 
 
 int main()

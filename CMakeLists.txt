@@ -43,7 +43,7 @@ target_link_libraries(MyVulkan imguithings)
 # add_executable(test test.cpp)
 
 
-add_executable(shadow shadowmap.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp)
+add_executable(shadow shadowmap.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp src/my_renderer.cpp src/my_swapchain.cpp src/my_texture.cpp)
 target_precompile_headers(shadow PRIVATE my_pch.h)
 target_link_libraries(shadow imguithings)
 
