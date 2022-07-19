@@ -1,9 +1,0 @@
-build
-glfw-3.3.6/build
-glfw-3.3.6/docs
-glfw-3.3.6/CMake
-*.tar.gz
-30_multisampling.cpp
-*.zip
-resources/*/
-doc/
