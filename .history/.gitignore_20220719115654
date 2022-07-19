@@ -1,4 +1,4 @@
-build
+build/
 glfw-3.3.6/build
 glfw-3.3.6/docs
 glfw-3.3.6/CMake
@@ -9,5 +9,5 @@ glfw-3.3.6/examples
 *.zip
 resources/*/
 doc/
-**/.history/
-**/.vscode/
+.history/
+.vscode/
