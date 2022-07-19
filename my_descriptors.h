@@ -5,15 +5,6 @@
 // #include<vector>
 // #include"my_pch.h"
 
-
-
-//
-struct DescriptorStat
-{
-    uint32_t uniformNum;
-    uint32_t imageSamplerNum;
-};
-
 struct DescriptorSets
 {
     std::vector<VkDescriptorSet> scene;
@@ -27,7 +18,6 @@ class MyDescriptors
 
 public:
     uint32_t frameNum=5;
-    // DescriptorStat stat;
     MySwapChain& myswapChain;
     MyDevice& mydevice;
 
@@ -60,12 +50,11 @@ public:
  */
     virtual void createDescriptorSetLayout(uint32_t uniformNum, uint32_t imageSamplerNum);
 
-
     virtual void allocateDescriptorSets();
 
-    VkDescriptorBufferInfo getBufferInfo(const MyBuffer& mybuffer, int bufferSize, int offset=0);
+    static VkDescriptorBufferInfo getBufferInfo(const MyBuffer& mybuffer, int bufferSize, int offset=0);
 
-    VkDescriptorImageInfo getImageInfo(VkImageLayout imageLayout, VkImageView imageView, VkSampler sampler);
+    static VkDescriptorImageInfo getImageInfo(VkImageLayout imageLayout, VkImageView imageView, VkSampler sampler);
 
     void cleanup();
 };

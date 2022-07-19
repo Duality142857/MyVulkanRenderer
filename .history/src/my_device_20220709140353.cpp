@@ -198,17 +198,6 @@ void MyDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize s
     endSingleTimeCommands(commandBuffer);
 }
 
-void MyDevice::copyBuffer2host(VkBuffer srcBuffer, void* data, VkDeviceSize size)
-{
-    MyBuffer stagingBuffer{*this};
-    createBuffer(size,VK_BUFFER_USAGE_TRANSFER_DST_BIT,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,stagingBuffer.buffer,stagingBuffer.memory);
-    void* srcdata;
-    vkMapMemory(device,stagingBuffer.memory,0,size,0,&srcdata);
-    copyBuffer(srcBuffer,stagingBuffer.buffer,size);
-    memcpy(data,srcdata,(size_t)size);
-    stagingBuffer.clear();
-}
-
 VkCommandBuffer MyDevice::beginSingleTimeCommands() 
 {
     VkCommandBufferAllocateInfo allocInfo{};

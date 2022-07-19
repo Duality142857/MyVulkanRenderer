@@ -81,8 +81,6 @@ public:
 
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-    void copyBuffer2host(VkBuffer srcBuffer, void* data, VkDeviceSize size);
-
     VkCommandBuffer beginSingleTimeCommands();
 
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);

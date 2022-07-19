@@ -37,31 +37,15 @@ include_directories(/home/number/approot/opensource/ImGuizmo)
 
 add_library(imguithings STATIC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp /home/number/approot/opensource/ImGuizmo/ImGuizmo.cpp)
 
-add_executable(MyVulkan app.cpp)
-target_precompile_headers(MyVulkan PRIVATE my_pch.h)
-target_link_libraries(MyVulkan imguithings)
-# add_executable(test test.cpp)
 
+function(buildApp appname appsource)
+    add_executable(${appname} ${appsource} src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp src/my_renderer.cpp src/my_swapchain.cpp src/my_texture.cpp)
 
-add_executable(shadow shadowmap.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp src/my_renderer.cpp src/my_swapchain.cpp src/my_texture.cpp)
-target_precompile_headers(shadow PRIVATE my_pch.h)
-target_link_libraries(shadow imguithings)
+    target_precompile_headers(${appname} PRIVATE my_pch.h)
 
-
-add_executable(instancing instancing.cpp src/my_buffer.cpp src/my_descriptors.cpp src/my_device.cpp src/my_pipeline.cpp src/my_renderer.cpp src/my_swapchain.cpp src/my_texture.cpp)
-
-target_precompile_headers(instancing PRIVATE my_pch.h)
-target_link_libraries(instancing imguithings)
-
-# add_executable(InputTest inputTest.cpp)
-# target_precompile_headers(InputTest PRIVATE my_pch.h)
-
-
-
-
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(MyVulkan
+    target_link_libraries(${appname} imguithings)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(${appname}
     -lglfw3
     -lvulkan
     -ldl
@@ -75,41 +59,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     -lXinerama
     -lXcursor
     )
-    target_link_libraries(shadow
-    -lglfw3
-    -lvulkan
-    -ldl
-    -lGL
-    -lrt
-    -lm
-    -lXrandr
-    -lXi
-    -lX11
-    -lpthread
-    -lXinerama
-    -lXcursor
-    )
-    target_link_libraries(instancing
-    -lglfw3
-    -lvulkan
-    -ldl
-    -lGL
-    -lrt
-    -lm
-    -lXrandr
-    -lXi
-    -lX11
-    -lpthread
-    -lXinerama
-    -lXcursor
-    )
-else()
+    else()
     message("windows")
-    # target_link_libraries(fstest glfw)
-    # target_link_libraries(bookmanager glfw Vulkan::Vulkan)
-    target_link_libraries(MyVulkan glfw Vulkan::Vulkan)
+    target_link_libraries(appname glfw Vulkan::Vulkan)
 endif()
+endfunction(buildApp)
 
-# add_executable(testevent my_inputsystem.cpp)
-# target_precompile_headers(testevent PRIVATE my_pch.h)
-
+buildApp(instancing instancing.cpp)
+buildApp(shadowmap shadowmap.cpp)
+buildApp(csTest csTest.cpp)

@@ -1,3 +1,4 @@
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -28,7 +29,6 @@ void test()
 #include"my_event.h"
 #include"my_inputsystem.h"
 #include"my_scene.h"
-#include"descriptor.h"
 
 // #define WITHLOG
 static inline void log(const std::string& msg)
@@ -37,9 +37,7 @@ static inline void log(const std::string& msg)
     std::cout<<msg<<std::endl;
 #endif
 }
-static constexpr int descriptorSetFrames=5;
-std::vector<VkDescriptorSet> descriptorSets_scene(descriptorSetFrames);
-std::vector<VkDescriptorSet> descriptorSets_offscreen(descriptorSetFrames);
+
 
 struct UBO_scene
 {
@@ -83,10 +81,6 @@ public:
     MyDevice mydevice{mywindow};
     MySwapChain myswapChain{mydevice};
     MyDescriptors mydescriptors{myswapChain};
-    Descriptors descriptors{mydevice};
-
-    VkDescriptorSetLayout descriptorSetLayout;
-
 
     MyPipeline scenePipeline{mydescriptors};
     MyPipeline shadowPipeline{mydescriptors};
@@ -126,30 +120,9 @@ public:
 
     virtual void run()
     {
-        createDescriptors();
         init();
         mainLoop();
         cleanup();
-    }
-    void createDescriptors()
-    {
-        //!create pool
-        std::vector<VkDescriptorPoolSize> poolsizes;
-        poolsizes.push_back(descriptors.poolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,100));
-        poolsizes.push_back(descriptors.poolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,100));
-        descriptors.createDescriptorPool(poolsizes,1000);
-
-        //!create descriptorSetLayout
-        std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
-        layoutBindings.push_back(descriptors.setLayoutBinding(0,1,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
-        layoutBindings.push_back(descriptors.setLayoutBinding(1,1,VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT));
-        layoutBindings.push_back(descriptors.setLayoutBinding(2,1,VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT));
-        descriptors.createDescriptorSetLayout(descriptorSetLayout,layoutBindings);
-
-        //!allocateDescriptorsets
-        std::vector<VkDescriptorSetLayout> setLayouts(descriptorSetFrames,descriptorSetLayout);
-        descriptors.allocateDescriptorSets(setLayouts,descriptorSets_scene);
-        descriptors.allocateDescriptorSets(setLayouts,descriptorSets_offscreen);
     }
 
     virtual void init()
@@ -228,7 +201,7 @@ public:
     
     virtual void recordCommand(VkCommandBuffer cmdBuffer, int imageIndex)
     {
-        uint32_t setIndex=imageIndex % descriptorSetFrames;
+        uint32_t setIndex=imageIndex % mydescriptors.frameNum;
 
         vkResetCommandBuffer(cmdBuffer,VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
         // renderer.startRecord(cmdBuffer,myswapChain.renderPass,myswapChain.framebuffers[imageIndex],scenePipeline.pipeline);
@@ -274,7 +247,7 @@ public:
 
             vkCmdSetDepthBias(cmdBuffer,depthBiasConstant,0.f,depthBiasSlope);  
 
-            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,shadowPipeline.pipelineLayout,0,1,&descriptorSets_offscreen[setIndex],0,nullptr);
+            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,shadowPipeline.pipelineLayout,0,1,&mydescriptors.descriptorSets.offscreen[setIndex],0,nullptr);
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);   
 
@@ -312,7 +285,7 @@ public:
             rect.offset.y=0.f;
             vkCmdSetScissor(cmdBuffer,0,1,&rect);
 
-            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,scenePipeline.pipelineLayout,0,1,&descriptorSets_scene[setIndex],0,nullptr);
+            vkCmdBindDescriptorSets(cmdBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,scenePipeline.pipelineLayout,0,1,&mydescriptors.descriptorSets.scene[setIndex],0,nullptr);
 
             vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, scenePipeline.pipeline);   
             
@@ -426,22 +399,22 @@ static MyGeo::Vec3f xaxis,yaxis,zaxis;
 private:
     virtual void updateDescriptorSets(VkCommandBuffer cmdBuffer, uint32_t imageIndex)
     {   
-        uint32_t setIndex=imageIndex % descriptorSetFrames;
+        uint32_t setIndex=imageIndex % mydescriptors.frameNum;
 
         //这些info中包含了具体的buffer的信息，比如buffer句柄，descriptor大小和在buffer中的offset，如果buffer只对应一个descriptor则offset为0
         //将这些info传给VkWriteDescriptorSet结构体作为参数，和descriptorset联系起来
-        VkDescriptorBufferInfo uniformBufferInfo_scene=descriptors.bufferInfo(uniformBuffers_scene[imageIndex],sizeof(UBO_scene));
+        VkDescriptorBufferInfo uniformBufferInfo_scene=mydescriptors.getBufferInfo(uniformBuffers_scene[imageIndex],sizeof(UBO_scene));
 
-        VkDescriptorBufferInfo uniformBufferInfo_offscreen=descriptors.bufferInfo(uniformBuffers_offscreen[imageIndex],sizeof(UBO_offscreen));
+        VkDescriptorBufferInfo uniformBufferInfo_offscreen=mydescriptors.getBufferInfo(uniformBuffers_offscreen[imageIndex],sizeof(UBO_offscreen));
 
-        VkDescriptorImageInfo imageInfo=descriptors.imageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,mytexture.textureImageView,mytexture.textureSampler);
+        VkDescriptorImageInfo imageInfo=mydescriptors.getImageInfo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,mytexture.textureImageView,mytexture.textureSampler);
 
-        VkDescriptorImageInfo offscreenDepthImageInfo=descriptors.imageInfo(VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,myswapChain.offscreenImageView,myswapChain.offscreenImageSampler);
+        VkDescriptorImageInfo offscreenDepthImageInfo=mydescriptors.getImageInfo(VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,myswapChain.offscreenImageView,myswapChain.offscreenImageSampler);
 
         
         std::array<VkWriteDescriptorSet,3> descriptorWrites_scene{};
         descriptorWrites_scene[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites_scene[0].dstSet = descriptorSets_scene[setIndex];
+        descriptorWrites_scene[0].dstSet = mydescriptors.descriptorSets.scene[setIndex];
         descriptorWrites_scene[0].dstBinding = 0;
         descriptorWrites_scene[0].dstArrayElement = 0;
         descriptorWrites_scene[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -449,7 +422,7 @@ private:
         descriptorWrites_scene[0].pBufferInfo = &uniformBufferInfo_scene;
 
         descriptorWrites_scene[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites_scene[1].dstSet = descriptorSets_scene[setIndex];
+        descriptorWrites_scene[1].dstSet = mydescriptors.descriptorSets.scene[setIndex];
         descriptorWrites_scene[1].dstBinding = 1;
         descriptorWrites_scene[1].dstArrayElement = 0;
         descriptorWrites_scene[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -457,7 +430,7 @@ private:
         descriptorWrites_scene[1].pImageInfo = &imageInfo;
 
         descriptorWrites_scene[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites_scene[2].dstSet = descriptorSets_scene[setIndex];
+        descriptorWrites_scene[2].dstSet = mydescriptors.descriptorSets.scene[setIndex];
         descriptorWrites_scene[2].dstBinding = 2;
         descriptorWrites_scene[2].dstArrayElement = 0;
         descriptorWrites_scene[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -468,7 +441,7 @@ private:
 
         std::array<VkWriteDescriptorSet,1> descriptorWrites_offscreen{};
         descriptorWrites_offscreen[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites_offscreen[0].dstSet = descriptorSets_offscreen[setIndex];
+        descriptorWrites_offscreen[0].dstSet = mydescriptors.descriptorSets.offscreen[setIndex];
         descriptorWrites_offscreen[0].dstBinding = 0;
         descriptorWrites_offscreen[0].dstArrayElement = 0;
         descriptorWrites_offscreen[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

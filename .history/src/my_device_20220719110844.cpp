@@ -205,7 +205,6 @@ void MyDevice::copyBuffer2host(VkBuffer srcBuffer, void* data, VkDeviceSize size
     void* srcdata;
     vkMapMemory(device,stagingBuffer.memory,0,size,0,&srcdata);
     copyBuffer(srcBuffer,stagingBuffer.buffer,size);
-    memcpy(data,srcdata,(size_t)size);
     stagingBuffer.clear();
 }
 

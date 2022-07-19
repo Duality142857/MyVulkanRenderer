@@ -71,10 +71,6 @@ void MyPipeline::createInstancePipeline(const std::string& _vertexShaderFile, co
     auto fragShaderStageInfo=fragmentShader.getShaderStageCreateInfo();
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-    // VkViewport viewport=PipelineConfigFunctions::viewport((float) myswapChain.swapChainExtent.width,(float) myswapChain.swapChainExtent.height);
-
-    // VkRect2D scissor=PipelineConfigFunctions::scissor(myswapChain.swapChainExtent);
-
     std::vector<VkVertexInputBindingDescription> bindingDescs;
     bindingDescs.resize(2);
     bindingDescs[0]=MyVertex_Default::getBindingDescription(0);

@@ -37,7 +37,7 @@ static inline void log(const std::string& msg)
     std::cout<<msg<<std::endl;
 #endif
 }
-static constexpr int descriptorSetFrames=5;
+static constexpr int descriptorSetFrames=2;
 std::vector<VkDescriptorSet> descriptorSets_scene(descriptorSetFrames);
 std::vector<VkDescriptorSet> descriptorSets_offscreen(descriptorSetFrames);
 
